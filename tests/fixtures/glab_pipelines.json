@@ -1,0 +1,54 @@
+[
+  {
+    "id": 2873456289,
+    "iid": 14390,
+    "project_id": 34675721,
+    "sha": "d2388fe231a628948c3ca0f99faa8fde2b92be79",
+    "ref": "refs/workloads/236d0d2349f",
+    "status": "success",
+    "source": "duo_workflow",
+    "created_at": "2026-09-23T02:33:49.519Z",
+    "updated_at": "2026-09-23T02:35:05.580Z",
+    "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/2873456289",
+    "name": null
+  },
+  {
+    "id": 2873456259,
+    "iid": 14389,
+    "project_id": 34675721,
+    "sha": "d2388fe231a628948c3ca0f99faa8fde2b92be79",
+    "ref": "refs/workloads/94eb0e0a08e",
+    "status": "success",
+    "source": "duo_workflow",
+    "created_at": "2026-09-23T02:33:48.196Z",
+    "updated_at": "2026-09-23T02:34:44.038Z",
+    "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/2873456259",
+    "name": null
+  },
+  {
+    "id": 2873456256,
+    "iid": 14388,
+    "project_id": 34675721,
+    "sha": "d2388fe231a628948c3ca0f99faa8fde2b92be79",
+    "ref": "refs/workloads/ffd3e858fde",
+    "status": "success",
+    "source": "duo_workflow",
+    "created_at": "2026-09-23T02:33:48.076Z",
+    "updated_at": "2026-09-23T02:46:43.150Z",
+    "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/2873456256",
+    "name": null
+  },
+  {
+    "id": 2873456248,
+    "iid": 14387,
+    "project_id": 34675721,
+    "sha": "6d01bde6dfcd3e102a83019cd4bc0ebeb91406c7",
+    "ref": "refs/merge-requests/3956/merge",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2026-09-23T02:33:47.865Z",
+    "updated_at": "2026-09-23T02:44:39.610Z",
+    "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/2873456248",
+    "name": null
+  }
+]

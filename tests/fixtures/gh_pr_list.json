@@ -1,0 +1,1336 @@
+[
+  {
+    "author": {
+      "id": "MDQ6VXNlcjE2MTE1MTA=",
+      "is_bot": false,
+      "login": "williammartin",
+      "name": "William Martin"
+    },
+    "headRefName": "williammartin-reviewer-facing-pr-guidance",
+    "headRepository": {
+      "id": "MDEwOlJlcG9zaXRvcnkyMTI2MTMwNDk=",
+      "name": "cli",
+      "nameWithOwner": "cli/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDEyOk9yZ2FuaXphdGlvbjU5NzA0NzEx",
+      "login": "cli"
+    },
+    "isCrossRepository": false,
+    "isDraft": false,
+    "number": 14509,
+    "reviewRequests": [
+      {
+        "__typename": "User",
+        "login": "BagToad"
+      }
+    ],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148526612",
+        "name": "label-external",
+        "startedAt": "2026-09-23T10:50:02Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148569389",
+        "name": "label-external",
+        "startedAt": "2026-09-23T10:50:11Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:41Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148093003",
+        "name": "label-external / label_issues",
+        "startedAt": "2026-09-23T10:48:38Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:53:53Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087948",
+        "name": "build (ubuntu-latest)",
+        "startedAt": "2026-09-23T10:48:38Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:58:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087831",
+        "name": "build (windows-latest)",
+        "startedAt": "2026-09-23T10:48:37Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:55:54Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087760",
+        "name": "build (macos-latest)",
+        "startedAt": "2026-09-23T10:48:44Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148523098",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-09-23T10:50:01Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148557899",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-09-23T10:50:08Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148094444",
+        "name": "close-from-default-branch / close-from-default-branch",
+        "startedAt": "2026-09-23T10:48:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:22Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087898",
+        "name": "integration-tests (ubuntu-latest)",
+        "startedAt": "2026-09-23T10:48:38Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:52:17Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087812",
+        "name": "integration-tests (windows-latest)",
+        "startedAt": "2026-09-23T10:48:38Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:51:19Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850906133/job/107148087567",
+        "name": "integration-tests (macos-latest)",
+        "startedAt": "2026-09-23T10:48:44Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148094604",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-23T10:48:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148492557",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-23T10:49:55Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148520390",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-23T10:50:01Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148094330",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-23T10:48:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148536324",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-23T10:50:04Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148562697",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-23T10:50:09Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148094156",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-23T10:48:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148519051",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-23T10:50:01Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148562635",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-23T10:50:09Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148136033",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-23T10:48:44Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148491841",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-23T10:49:55Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148520311",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-23T10:50:01Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:48:35Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35850907004/job/107148094369",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-23T10:48:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:49:55Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851029243/job/107148492160",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-23T10:49:55Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-23T10:50:00Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35851037669/job/107148519743",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-23T10:50:01Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      }
+    ],
+    "title": "Clarify reviewer-facing PR guidance",
+    "url": "https://github.com/cli/cli/pull/14509"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjEwNTM2OTUw",
+      "is_bot": false,
+      "login": "jarrensj",
+      "name": "Jarren"
+    },
+    "headRefName": "remove-claude-md",
+    "headRepository": {
+      "id": "R_kgDOUgvTGQ",
+      "name": "gh-cli",
+      "nameWithOwner": "jarrensj/gh-cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDQ6VXNlcjEwNTM2OTUw",
+      "name": "Jarren",
+      "login": "jarrensj"
+    },
+    "isCrossRepository": true,
+    "isDraft": false,
+    "number": 14474,
+    "reviewRequests": [
+      {
+        "__typename": "User",
+        "login": "niik"
+      }
+    ],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794872073",
+        "name": "label-external",
+        "startedAt": "2026-09-18T23:26:22Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:05Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744775612",
+        "name": "label-external",
+        "startedAt": "2026-09-22T12:30:05Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:26Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788209802",
+        "name": "label-external / label_issues",
+        "startedAt": "2026-09-18T22:53:21Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794895927",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-09-18T23:26:30Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:05Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744833087",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-09-22T12:30:14Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:19Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788211054",
+        "name": "close-from-default-branch / close-from-default-branch",
+        "startedAt": "2026-09-18T22:53:19Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:05Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744816935",
+        "name": "check-requirements",
+        "startedAt": "2026-09-22T12:30:12Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794894913",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-18T23:26:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:32Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788209957",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-18T22:53:21Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:19Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788210924",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-18T22:53:19Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794872749",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-18T23:26:22Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:18Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788210758",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-18T22:53:19Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794872486",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-18T23:26:22Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:05Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744776621",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-22T12:30:05Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:19Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788210867",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-18T22:53:19Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794897534",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-18T23:26:30Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:06Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744782630",
+        "name": "close-no-help-wanted / close-no-help-wanted",
+        "startedAt": "2026-09-22T12:30:06Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T22:53:18Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35403472514/job/105788232827",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-18T22:53:25Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-18T23:26:22Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35405689745/job/105794873684",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-18T23:26:23Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-22T12:30:06Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/35727536539/job/106744783136",
+        "name": "ready-for-review / ready-for-review",
+        "startedAt": "2026-09-22T12:30:06Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      }
+    ],
+    "title": "Remove CLAUDE.md in favor of AGENTS.md",
+    "url": "https://github.com/cli/cli/pull/14474"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjQxNjU2Ng==",
+      "is_bot": false,
+      "login": "acoulton",
+      "name": "Andrew Coulton"
+    },
+    "headRefName": "patch-1",
+    "headRepository": {
+      "id": "R_kgDOURCb-A",
+      "name": "cli",
+      "nameWithOwner": "acoulton/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDQ6VXNlcjQxNjU2Ng==",
+      "name": "Andrew Coulton",
+      "login": "acoulton"
+    },
+    "isCrossRepository": true,
+    "isDraft": false,
+    "number": 14373,
+    "reviewRequests": [
+      {
+        "__typename": "User",
+        "login": "sergiou87"
+      },
+      {
+        "__typename": "User",
+        "login": "babakks"
+      }
+    ],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:38Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713071007",
+        "name": "label-external / label_issues",
+        "startedAt": "2026-09-07T10:43:34Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:31Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713071958",
+        "name": "close-from-default-branch / close-from-default-branch",
+        "startedAt": "2026-09-07T10:43:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:42Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713071105",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-07T10:43:34Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:31Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713072238",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-07T10:43:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:31Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713072025",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-07T10:43:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:31Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713072300",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-07T10:43:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-07T10:43:31Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/34112933648/job/101713071482",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-07T10:43:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      }
+    ],
+    "title": "docs: Add step to install working version on Ubuntu Pro",
+    "url": "https://github.com/cli/cli/pull/14373"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjE2MTE1MTA=",
+      "is_bot": false,
+      "login": "williammartin",
+      "name": "William Martin"
+    },
+    "headRefName": "williammartin-clean-git-test-seams",
+    "headRepository": {
+      "id": "MDEwOlJlcG9zaXRvcnkyMTI2MTMwNDk=",
+      "name": "cli",
+      "nameWithOwner": "cli/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDEyOk9yZ2FuaXphdGlvbjU5NzA0NzEx",
+      "login": "cli"
+    },
+    "isCrossRepository": false,
+    "isDraft": true,
+    "number": 14355,
+    "reviewRequests": [],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:52:57Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784819/job/101084938643",
+        "name": "lint",
+        "startedAt": "2026-09-04T15:50:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:39Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084940387",
+        "name": "label-external / label_issues",
+        "startedAt": "2026-09-04T15:50:36Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:55:39Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938373",
+        "name": "build (ubuntu-latest)",
+        "startedAt": "2026-09-04T15:50:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:59:54Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938041",
+        "name": "build (windows-latest)",
+        "startedAt": "2026-09-04T15:50:37Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:57:15Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938495",
+        "name": "build (macos-latest)",
+        "startedAt": "2026-09-04T15:50:36Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084970599",
+        "name": "close-from-default-branch / close-from-default-branch",
+        "startedAt": "2026-09-04T15:50:38Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:51:02Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784819/job/101084938426",
+        "name": "govulncheck",
+        "startedAt": "2026-09-04T15:50:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:52:08Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938440",
+        "name": "integration-tests (ubuntu-latest)",
+        "startedAt": "2026-09-04T15:50:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:53:44Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938572",
+        "name": "integration-tests (windows-latest)",
+        "startedAt": "2026-09-04T15:50:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:51:59Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891784710/job/101084938326",
+        "name": "integration-tests (macos-latest)",
+        "startedAt": "2026-09-04T15:50:36Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084942069",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-09-04T15:50:33Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084941969",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-09-04T15:50:33Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084941638",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-09-04T15:50:32Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084941267",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-09-04T15:50:32Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-09-04T15:50:32Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/33891785341/job/101084975520",
+        "name": "ready-for-review",
+        "startedAt": "2026-09-04T15:50:39Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      }
+    ],
+    "title": "Remove obsolete Git test seams",
+    "url": "https://github.com/cli/cli/pull/14355"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjE1MzI0ODY=",
+      "is_bot": false,
+      "login": "heaths",
+      "name": "Heath Stewart"
+    },
+    "headRefName": "issue3718",
+    "headRepository": {
+      "id": "MDEwOlJlcG9zaXRvcnkyOTY5MDU4Nzc=",
+      "name": "cli",
+      "nameWithOwner": "heaths/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDQ6VXNlcjE1MzI0ODY=",
+      "name": "Heath Stewart",
+      "login": "heaths"
+    },
+    "isCrossRepository": true,
+    "isDraft": true,
+    "number": 14148,
+    "reviewRequests": [],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:59:49Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758954/job/94966442733",
+        "name": "lint",
+        "startedAt": "2026-08-15T04:58:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966953394",
+        "name": "label-external",
+        "startedAt": "2026-08-15T05:02:42Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968026172",
+        "name": "label-external",
+        "startedAt": "2026-08-15T05:12:30Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:01:01Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865759043/job/94966442885",
+        "name": "CodeQL-Build (go, manual, ./.github/codeql/codeql-config.yml)",
+        "startedAt": "2026-08-15T04:58:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Code Scanning"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:03:13Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442609",
+        "name": "build (ubuntu-latest)",
+        "startedAt": "2026-08-15T04:58:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:59:07Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865759043/job/94966442889",
+        "name": "CodeQL-Build (actions, none, security-and-quality)",
+        "startedAt": "2026-08-15T04:58:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Code Scanning"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:05:49Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442570",
+        "name": "build (windows-latest)",
+        "startedAt": "2026-08-15T04:58:17Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:03:40Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442562",
+        "name": "build (macos-latest)",
+        "startedAt": "2026-08-15T04:58:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966964830",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-08-15T05:02:48Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968026315",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-08-15T05:12:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:58:45Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758954/job/94966442727",
+        "name": "govulncheck",
+        "startedAt": "2026-08-15T04:58:17Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:59:37Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442519",
+        "name": "integration-tests (ubuntu-latest)",
+        "startedAt": "2026-08-15T04:58:15Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:00:09Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442676",
+        "name": "integration-tests (windows-latest)",
+        "startedAt": "2026-08-15T04:58:15Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:59:45Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865758949/job/94966442608",
+        "name": "integration-tests (macos-latest)",
+        "startedAt": "2026-08-15T04:58:17Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966953529",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-08-15T05:02:42Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968040712",
+        "name": "check-requirements / check-requirements",
+        "startedAt": "2026-08-15T05:12:40Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966953568",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-08-15T05:02:42Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968026296",
+        "name": "check-requirements / close-unmet-requirements",
+        "startedAt": "2026-08-15T05:12:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966964813",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-08-15T05:02:48Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968026257",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-08-15T05:12:31Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966970062",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-08-15T05:02:51Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968037606",
+        "name": "close-no-help-wanted",
+        "startedAt": "2026-08-15T05:12:38Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:02:42Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31865960889/job/94966953465",
+        "name": "ready-for-review",
+        "startedAt": "2026-08-15T05:02:42Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T05:12:30Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/31866377438/job/94968026024",
+        "name": "ready-for-review",
+        "startedAt": "2026-08-15T05:12:30Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-08-15T04:59:00Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/runs/94966518720",
+        "name": "CodeQL",
+        "startedAt": "2026-08-15T04:58:58Z",
+        "status": "COMPLETED",
+        "workflowName": ""
+      }
+    ],
+    "title": "Update glamour to v2",
+    "url": "https://github.com/cli/cli/pull/14148"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjE4MTY5Mw==",
+      "is_bot": false,
+      "login": "offbyone",
+      "name": "Chris Rose"
+    },
+    "headRefName": "o1/add-latest-pre-release-and-pin-flags-to-gh-extension-upgrade/nysoxynolqlo",
+    "headRepository": {
+      "id": "R_kgDOTilJiQ",
+      "name": "cli",
+      "nameWithOwner": "offbyone/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDQ6VXNlcjE4MTY5Mw==",
+      "name": "Chris Rose",
+      "login": "offbyone"
+    },
+    "isCrossRepository": true,
+    "isDraft": false,
+    "number": 13982,
+    "reviewRequests": [],
+    "statusCheckRollup": [],
+    "title": "Add --latest-pre-release and --pin flags to gh extension upgrade",
+    "url": "https://github.com/cli/cli/pull/13982"
+  },
+  {
+    "author": {
+      "id": "MDQ6VXNlcjU4MjA2NTQ=",
+      "is_bot": false,
+      "login": "dsanders11",
+      "name": "David Sanders"
+    },
+    "headRefName": "fix-non-zipped-artifact-download",
+    "headRepository": {
+      "id": "R_kgDORvBnCg",
+      "name": "cli",
+      "nameWithOwner": "dsanders11/cli"
+    },
+    "headRepositoryOwner": {
+      "id": "MDQ6VXNlcjU4MjA2NTQ=",
+      "name": "David Sanders",
+      "login": "dsanders11"
+    },
+    "isCrossRepository": true,
+    "isDraft": false,
+    "number": 13013,
+    "reviewRequests": [
+      {
+        "__typename": "User",
+        "login": "williammartin"
+      },
+      {
+        "__typename": "User",
+        "login": "BagToad"
+      }
+    ],
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329290178",
+        "name": "label-external",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323672/job/75329289952",
+        "name": "discuss",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "Process Discuss Label"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:51:00Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895944/job/71398351307",
+        "name": "CodeQL-Build (go)",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Code Scanning"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:50:11Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895899/job/71398350389",
+        "name": "lint",
+        "startedAt": "2026-04-15T05:47:49Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:52:26Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350902",
+        "name": "build (ubuntu-latest)",
+        "startedAt": "2026-04-15T05:47:49Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:48:37Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895944/job/71398351322",
+        "name": "CodeQL-Build (actions)",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Code Scanning"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:55:42Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350919",
+        "name": "build (windows-latest)",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:52:40Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350921",
+        "name": "build (macos-latest)",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:48:38Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895899/job/71398350402",
+        "name": "govulncheck",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Lint"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329290283",
+        "name": "close-from-default-branch",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:49:26Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350908",
+        "name": "integration-tests (ubuntu-latest)",
+        "startedAt": "2026-04-15T05:47:49Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:50:48Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350935",
+        "name": "integration-tests (windows-latest)",
+        "startedAt": "2026-04-15T05:47:49Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:49:46Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/23472895911/job/71398350910",
+        "name": "integration-tests (macos-latest)",
+        "startedAt": "2026-04-15T05:47:50Z",
+        "status": "COMPLETED",
+        "workflowName": "Unit and Integration Tests"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329290213",
+        "name": "check-requirements",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329290395",
+        "name": "close-unmet-requirements",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:29Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329290164",
+        "name": "close-no-help-wanted / close-no-help-wanted",
+        "startedAt": "2026-05-11T09:58:29Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-05-11T09:58:38Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/actions/runs/25663323675/job/75329289805",
+        "name": "ready-for-review / ready-for-review",
+        "startedAt": "2026-05-11T09:58:33Z",
+        "status": "COMPLETED",
+        "workflowName": "PR Triaging"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-04-15T05:48:29Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/cli/cli/runs/71398415543",
+        "name": "CodeQL",
+        "startedAt": "2026-04-15T05:48:27Z",
+        "status": "COMPLETED",
+        "workflowName": ""
+      }
+    ],
+    "title": "fix: handle non-zipped artifact downloads",
+    "url": "https://github.com/cli/cli/pull/13013"
+  }
+]

@@ -1,0 +1,42 @@
+# herdr-pr-modal — pick an open PR of the current repo from a popup that looks
+# like Herdr's keybinds help, and open its head branch as a worktree-backed
+# Herdr workspace (or switch to the one that already exists).
+#
+# Ids here are repeated as constants in src/ids.rs; tests/manifest.rs pins the
+# two together.
+
+id = "tarektouati.pr-modal"
+name = "PR modal"
+version = "0.1.0"
+# Smoke-tested on a 0.9.0 server with the 0.9.1 CLI (both protocol 22):
+# popup plugin panes, plugin-root relative commands, worktree.open returning
+# an already-open workspace.
+min_herdr_version = "0.9.0"
+description = "Popup listing a repo's open GitHub PRs / GitLab MRs; Enter opens the PR in its own git worktree workspace"
+platforms = ["linux", "macos"]
+
+# Needs a Rust toolchain on the installing machine (see README).
+[[build]]
+command = ["cargo", "build", "--release", "--locked"]
+
+# Bind a key to `tarektouati.pr-modal.open` (manifests cannot declare keys;
+# run `target/release/herdr-pr-modal setup` for the snippet). Actions run on
+# the server with no TTY, so this only opens the popup below.
+[[actions]]
+id = "open"
+title = "Open PRs"
+description = "List open PRs of the focused pane's repo in a popup"
+contexts = ["pane", "workspace"]
+command = ["target/release/herdr-pr-modal", "open"]
+
+# Herdr draws the popup border (accent) and paints `title` on it. The title
+# must be non-empty; a zero-width space gives a clean border because the
+# modal draws its own `open PRs · owner/repo` header inside, as the built-in
+# keybinds modal does. Size is overridable in the plugin config.toml.
+[[panes]]
+id = "modal"
+title = "​"
+placement = "popup"
+width = "70%"
+height = "70%"
+command = ["target/release/herdr-pr-modal", "modal"]
