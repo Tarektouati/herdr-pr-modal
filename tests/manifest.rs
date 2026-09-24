@@ -81,13 +81,12 @@ fn ids_are_local_and_unique() {
 #[test]
 fn build_output_is_what_commands_exec() {
     let m = manifest();
-    assert!(m.build.iter().any(|b| b.command.starts_with(&[
-        "cargo".into(),
-        "build".into(),
-        "--release".into()
-    ])));
-    let bin = concat!("target/release/", env!("CARGO_PKG_NAME"));
+    assert!(m.build.iter().any(|b| b.command == ["bash", "herdr/install.sh"]));
+    let bin = concat!("bin/", env!("CARGO_PKG_NAME"));
     assert_eq!(BINARY_PATH, bin);
+    let script = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/herdr/install.sh")).unwrap();
+    assert!(script.contains(concat!("NAME=\"", env!("CARGO_PKG_NAME"), "\"")));
+    assert!(script.contains("BIN_DIR=\"$ROOT/bin\""));
     assert!(m.min_herdr_version.split('.').count() == 3);
 }
 

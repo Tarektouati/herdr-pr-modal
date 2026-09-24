@@ -46,16 +46,17 @@ switched to it instead; nothing is created twice.
 ## Requirements
 
 - Herdr ≥ 0.9.0, macOS or Linux.
-- A Rust toolchain (`cargo`) on the machine that installs the plugin; the
-  install step runs `cargo build --release`. Get one with
-  [rustup](https://rustup.rs).
-- `git`.
+- `git` and `curl`.
 - GitHub: [`gh`](https://cli.github.com), logged in for the repo's host
   (`gh auth login --hostname <host>`).
 - GitLab: [`glab`](https://gitlab.com/gitlab-org/cli), logged in for the
   repo's host (`glab auth login --hostname <host>`).
 
 You only need the CLI for the forge you use.
+
+No Rust toolchain is needed: install downloads a prebuilt binary for macOS
+(arm64, x86_64) or Linux (arm64, x86_64). On other platforms, or when the
+download fails, it builds from source if `cargo` is installed.
 
 ## Install
 
@@ -68,7 +69,7 @@ From source:
 ```sh
 git clone https://github.com/tarektouati/herdr-pr-modal
 cd herdr-pr-modal
-cargo build --release
+HERDR_PR_MODAL_FROM_SOURCE=1 bash herdr/install.sh   # cargo build → bin/herdr-pr-modal
 herdr plugin link "$PWD"
 ```
 
@@ -83,7 +84,7 @@ herdr plugin uninstall tarektouati.pr-modal
 Herdr plugin manifests cannot declare keys. Print the snippet:
 
 ```sh
-"$(herdr plugin list --json | jq -r '.result.plugins[] | select(.plugin_id=="tarektouati.pr-modal") | .plugin_root')/target/release/herdr-pr-modal" setup
+"$(herdr plugin list --json | jq -r '.result.plugins[] | select(.plugin_id=="tarektouati.pr-modal") | .plugin_root')/bin/herdr-pr-modal" setup
 ```
 
 which prints (use `setup --key <key>` for another key):
@@ -164,8 +165,10 @@ the terminal's light/dark state.
   fix it (install the CLI, or `gh auth login` / `glab auth login` for that host).
 - **Wrong or no forge detected on a self-hosted instance**: set
   `provider = "github"` or `"gitlab"` in the config.
-- **Install fails with `cargo: command not found`**: install Rust with
-  [rustup](https://rustup.rs) and make sure `~/.cargo/bin` is on your `PATH`.
+- **Install fails with "download failed" / "cargo is not installed"**: the
+  prebuilt binary could not be fetched (offline, proxy, unsupported
+  platform). Install Rust with [rustup](https://rustup.rs) so the install can
+  build from source, then reinstall.
 - **Nothing happens on the key**: check the binding was added and the config
   reloaded (`herdr server reload-config`), then look at
   `herdr plugin log list --plugin tarektouati.pr-modal`.
@@ -183,8 +186,21 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
 
+After changing code, rerun `HERDR_PR_MODAL_FROM_SOURCE=1 bash herdr/install.sh`
+so the linked plugin picks up the new binary.
+
 `tests/fixtures/` holds recorded `gh` / GitLab JSON. `tests/manifest.rs` checks
 that the ids and commands in `herdr-plugin.toml` match the code.
+
+## Releasing
+
+1. Bump `version` in both `Cargo.toml` and `herdr-plugin.toml` (they must match).
+2. Commit, then tag with the bare version and push:
+   `git tag 0.1.1 && git push origin main 0.1.1`.
+
+The `release` workflow builds the four binaries, attaches them with checksums
+to a draft release, and publishes it once all are attached. `herdr/install.sh`
+downloads from the release named after the manifest version.
 
 ## License
 
