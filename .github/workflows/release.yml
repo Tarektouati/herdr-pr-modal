@@ -6,31 +6,45 @@ name: release
 on:
   push:
     tags: ["[0-9]+.[0-9]+.[0-9]+"]
+  # Rerun for an existing tag (a missed tag-push event, a release created by
+  # hand): `gh workflow run release.yml -f tag=0.1.1`.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build and attach binaries to
+        required: true
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
 
 jobs:
   # A tag push creates no Release on its own; create it as a draft so it is
-  # only published once every binary is attached.
+  # only published once every binary is attached. An existing release (e.g.
+  # one created by hand) is left as is and the binaries are added to it.
   create-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
       # install.sh downloads the release named after the manifest version, so
       # a tag that disagrees with it would publish binaries nobody fetches.
       - name: Tag matches manifest versions
         run: |
           manifest="$(grep -m1 '^version' herdr-plugin.toml | sed -E 's/.*"([^"]+)".*/\1/')"
           cargo="$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')"
-          if [ "$GITHUB_REF_NAME" != "$manifest" ] || [ "$GITHUB_REF_NAME" != "$cargo" ]; then
-            echo "tag $GITHUB_REF_NAME != herdr-plugin.toml $manifest / Cargo.toml $cargo" >&2
+          if [ "$TAG" != "$manifest" ] || [ "$TAG" != "$cargo" ]; then
+            echo "tag $TAG != herdr-plugin.toml $manifest / Cargo.toml $cargo" >&2
             exit 1
           fi
       - uses: taiki-e/create-gh-release-action@v1
         with:
           title: herdr-pr-modal $version
           draft: true
+          ref: refs/tags/${{ env.TAG }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   binaries:
@@ -47,6 +61,8 @@ jobs:
           - { target: aarch64-unknown-linux-musl, os: ubuntu-latest }
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
       # Builds for the target (via `cross` where needed), archives it as
       # herdr-pr-modal-<target>.tar.gz with a .sha256 sidecar, and uploads both.
       - uses: taiki-e/upload-rust-binary-action@v1
@@ -55,6 +71,7 @@ jobs:
           target: ${{ matrix.target }}
           archive: $bin-$target
           checksum: sha256
+          ref: refs/tags/${{ env.TAG }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # Publish only when every target's assets are attached, so a public release
@@ -63,6 +80,6 @@ jobs:
     needs: binaries
     runs-on: ubuntu-latest
     steps:
-      - run: gh release edit "$GITHUB_REF_NAME" --draft=false --repo "$GITHUB_REPOSITORY"
+      - run: gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
