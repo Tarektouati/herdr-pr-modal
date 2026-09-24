@@ -7,7 +7,7 @@
 
 id = "tarektouati.pr-modal"
 name = "PR modal"
-version = "0.1.0"
+version = "0.1.1"
 # Smoke-tested on a 0.9.0 server with the 0.9.1 CLI (both protocol 22):
 # popup plugin panes, plugin-root relative commands, worktree.open returning
 # an already-open workspace.
