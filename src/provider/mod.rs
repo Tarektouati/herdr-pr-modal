@@ -6,7 +6,7 @@ pub mod gitlab;
 
 use crate::cmd::{Output, RunError, Runner};
 use crate::config::ProviderChoice;
-use crate::model::{Listing, Pr, slug};
+use crate::model::{Listing, Pr, PrDetails, slug};
 use std::path::Path;
 
 /// A repository on a forge host, parsed from a git remote URL.
@@ -183,6 +183,8 @@ pub trait Provider: Send + Sync {
     fn cli(&self) -> &'static str;
     fn list_open_prs(&self, repo: &RepoRef, cwd: &Path) -> Result<Listing, ProviderError>;
     fn fetch_head(&self, pr: &Pr, remote: &str) -> FetchPlan;
+    /// Read-only details for the preview. Sections fail independently.
+    fn pr_details(&self, repo: &RepoRef, cwd: &Path, number: u64) -> PrDetails;
 }
 
 pub fn for_kind<'a>(kind: ProviderKind, runner: &'a dyn Runner) -> Box<dyn Provider + 'a> {

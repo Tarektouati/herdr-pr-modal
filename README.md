@@ -38,6 +38,8 @@ switched to it instead; nothing is created twice.
 - **GitHub and GitLab**, including GitHub Enterprise and self-hosted GitLab.
 - **Grouped list**: your PRs, PRs awaiting your review, then everything else.
 - **At a glance**: CI status, draft marker, author and branch; live filter with `/`.
+- **Preview**: description, labels, reviewers, per-check CI and the latest
+  comments, read-only, without checking anything out.
 - **One worktree per PR**: same-repo and fork PRs alike, reused on every later open.
 - **Safe**: never runs a destructive git command, never touches an existing worktree.
 - **No tokens**: all API calls go through `gh` / `glab`, which own authentication.
@@ -109,9 +111,31 @@ Paste it into `~/.config/herdr/config.toml` and run `herdr server reload-config`
 | `pgdn` / `pgup` | move a page |
 | `g` / `G` | first / last |
 | `/` | filter live by number (`12`, `#12`), title, branch or author |
+| `p` / `→` / `l` | preview the PR |
 | `enter` | open the PR's worktree workspace |
 | `r` | refresh (bypasses the cache) |
 | `esc` | clear the filter first, then close |
+
+In the preview:
+
+| key | action |
+|---|---|
+| `j` / `k`, `↓` / `↑` | scroll |
+| `pgdn` / `pgup` | scroll a page |
+| `g` / `G` | top / bottom |
+| `[` / `]` | previous / next PR in the (filtered) list |
+| `enter` | open the PR's worktree workspace |
+| `r` | refetch the preview |
+| `esc` / `←` / `h` | back to the list, selection and filter kept |
+
+The preview shows meta (author, head → base, draft, review decision and
+reviewers, labels, +/− lines and files changed, dates), the description with
+PR-template comments stripped, one line per CI check or pipeline job
+(GitLab: up to 1,000 jobs plus downstream pipeline triggers), and the latest
+20 conversation comments (GitLab system notes and inline diff threads are left
+out). It is fetched when opened and kept in memory until the popup closes; it
+is never written to the cache. GitLab does not report +/− line counts, so only
+the number of files changed is shown there.
 
 ## What Enter does
 
