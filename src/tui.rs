@@ -7,7 +7,7 @@ use crate::cmd::SystemRunner;
 use crate::config::Config;
 use crate::context::Origin;
 use crate::herdr;
-use crate::model::{Listing, Pr};
+use crate::model::{Listing, Pr, PrDetails};
 use crate::session::{self, RepoInfo};
 use crate::{provider, theme, ui};
 use crossterm::event::{self, Event, KeyEventKind};
@@ -21,6 +21,8 @@ enum Msg {
     Listing(Result<(Listing, Option<u64>), ErrRow>),
     Marks(HashSet<u64>),
     Opened(Result<Opened, String>),
+    /// Preview details for a PR number. Kept in memory only.
+    Details(u64, Box<PrDetails>),
 }
 
 struct Env {
@@ -56,6 +58,15 @@ fn spawn_open(tx: &Sender<Msg>, env: &std::sync::Arc<Env>, info: RepoInfo, pr: P
             plan: &plan,
         };
         let _ = tx.send(Msg::Opened(checkout::open_pr(&req)));
+    });
+}
+
+fn spawn_details(tx: &Sender<Msg>, info: RepoInfo, number: u64) {
+    let tx = tx.clone();
+    std::thread::spawn(move || {
+        let runner = SystemRunner;
+        let details = provider::for_kind(info.kind, &runner).pr_details(&info.repo, &info.root, number);
+        let _ = tx.send(Msg::Details(number, Box::new(details)));
     });
 }
 
@@ -115,6 +126,12 @@ pub fn run_modal() -> std::io::Result<()> {
                             spawn_open(&tx, &env, i.clone(), pr);
                         }
                     }
+                    // `App` already marked the PR as loading.
+                    Action::Preview(idx) | Action::RefreshDetail(idx) => {
+                        if let (Some(i), Some(listing)) = (&info, &app.listing) {
+                            spawn_details(&tx, i.clone(), listing.prs[idx].number);
+                        }
+                    }
                 }
             }
 
@@ -149,6 +166,7 @@ pub fn run_modal() -> std::io::Result<()> {
                         app.busy = None;
                         app.banner = Some(ErrRow::new(e, None));
                     }
+                    Msg::Details(number, details) => app.set_detail(number, *details),
                 }
             }
         }

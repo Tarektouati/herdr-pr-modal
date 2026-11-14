@@ -6,7 +6,10 @@
 
 use super::{FetchPlan, Provider, ProviderError, ProviderKind, RepoRef, cli_error, plan_for};
 use crate::cmd::Runner;
-use crate::model::{Ci, Listing, Pr};
+use crate::model::{
+    Check, Checks, Ci, Comment, Comments, Listing, Pr, PrDetails, PrMeta, Reviewer, latest_comments,
+    sort_checks,
+};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -47,6 +50,75 @@ struct GlPipeline {
     status: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct GlMrView {
+    #[serde(default)]
+    author: Option<GlUser>,
+    #[serde(default)]
+    source_branch: String,
+    #[serde(default)]
+    target_branch: String,
+    #[serde(default)]
+    draft: bool,
+    #[serde(default)]
+    work_in_progress: bool,
+    #[serde(default)]
+    labels: Vec<String>,
+    #[serde(default)]
+    reviewers: Vec<GlUser>,
+    #[serde(default)]
+    changes_count: Option<String>,
+    #[serde(default)]
+    detailed_merge_status: Option<String>,
+    #[serde(default)]
+    created_at: String,
+    #[serde(default)]
+    updated_at: String,
+    #[serde(default)]
+    description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GlNote {
+    #[serde(default)]
+    author: Option<GlUser>,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    created_at: String,
+    #[serde(default)]
+    system: bool,
+    /// `DiffNote` for an inline diff comment, `null` for a conversation one.
+    #[serde(default, rename = "type")]
+    kind: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GlMrPipeline {
+    id: u64,
+    #[serde(default)]
+    project_id: Option<u64>,
+}
+
+/// A pipeline job or a bridge (trigger job); both carry these fields.
+#[derive(Debug, Deserialize)]
+struct GlJob {
+    #[serde(default)]
+    id: u64,
+    name: String,
+    #[serde(default)]
+    stage: Option<String>,
+    status: String,
+    #[serde(default)]
+    allow_failure: bool,
+}
+
+/// Notes are fetched newest first, one page.
+pub const NOTES_PAGE: usize = 100;
+/// Jobs are fetched in pages of `JOBS_PAGE`, at most `MAX_JOB_PAGES` of them.
+pub const JOBS_PAGE: usize = 100;
+pub const MAX_JOB_PAGES: usize = 10;
+
 fn pipeline_ci(status: &str) -> Ci {
     match status {
         "success" => Ci::Pass,
@@ -85,6 +157,92 @@ pub fn parse_mr_list(json: &str, viewer: &str, ci_by_sha: &HashMap<String, Ci>) 
             url: m.web_url,
         })
         .collect())
+}
+
+/// A parse failure becomes a section error with no fix.
+fn parsed<T>(r: Result<T, String>) -> Result<T, ProviderError> {
+    r.map_err(|e| ProviderError::new(e, None))
+}
+
+fn username(u: Option<GlUser>) -> String {
+    u.map(|u| u.username).unwrap_or_else(|| "ghost".into())
+}
+
+/// Parse `glab mr view -F json` (a REST merge request object).
+pub fn parse_mr_view(json: &str) -> Result<PrMeta, String> {
+    let m: GlMrView = serde_json::from_str(json).map_err(|e| format!("unexpected glab output: {e}"))?;
+    let review_decision = match m.detailed_merge_status.as_deref() {
+        Some("not_approved") => Some("review required".to_string()),
+        Some("requested_changes") => Some("changes requested".to_string()),
+        _ => None,
+    };
+    Ok(PrMeta {
+        author: username(m.author),
+        head_branch: m.source_branch,
+        base_branch: m.target_branch,
+        is_draft: m.draft || m.work_in_progress,
+        review_decision,
+        reviewers: m.reviewers.into_iter().map(|r| Reviewer { login: r.username, state: None }).collect(),
+        labels: m.labels,
+        additions: None,
+        deletions: None,
+        changed_files: m.changes_count.filter(|c| !c.is_empty()),
+        created_at: m.created_at,
+        updated_at: m.updated_at,
+        body: m.description.unwrap_or_default(),
+    })
+}
+
+/// Parse a newest-first page of MR notes: system notes and inline diff
+/// comments dropped, the latest conversation comments kept oldest → newest.
+pub fn parse_notes(json: &str) -> Result<Comments, String> {
+    let notes: Vec<GlNote> =
+        serde_json::from_str(json).map_err(|e| format!("unexpected glab output: {e}"))?;
+    let full_page = notes.len() >= NOTES_PAGE;
+    let mut comments: Vec<Comment> = notes
+        .into_iter()
+        .filter(|n| !n.system && n.kind.as_deref() != Some("DiffNote"))
+        .map(|n| Comment { author: username(n.author), created_at: n.created_at, body: n.body })
+        .collect();
+    comments.reverse();
+    let mut out = latest_comments(comments);
+    out.more_unknown = full_page;
+    Ok(out)
+}
+
+/// Newest pipeline of an MR (the API lists newest first) and the project it
+/// ran in, which is the fork for fork MRs.
+pub fn latest_pipeline(json: &str) -> Result<Option<(u64, Option<u64>)>, String> {
+    let list: Vec<GlMrPipeline> =
+        serde_json::from_str(json).map_err(|e| format!("unexpected glab output: {e}"))?;
+    Ok(list.first().map(|p| (p.id, p.project_id)))
+}
+
+fn job_page(json: &str) -> Result<Vec<GlJob>, String> {
+    serde_json::from_str(json).map_err(|e| format!("unexpected glab output: {e}"))
+}
+
+/// Parse one page of a pipeline's jobs (or bridges) into checks.
+pub fn parse_jobs(json: &str) -> Result<Vec<Check>, String> {
+    Ok(jobs_to_checks(job_page(json)?))
+}
+
+/// Jobs and bridges in pipeline order (by id), then sorted by severity.
+fn jobs_to_checks(mut jobs: Vec<GlJob>) -> Vec<Check> {
+    jobs.sort_by_key(|j| j.id);
+    let mut checks: Vec<Check> = jobs
+        .into_iter()
+        .map(|j| {
+            let (ci, label) = if j.allow_failure && j.status == "failed" {
+                (Ci::None, "failed (allowed)".to_string())
+            } else {
+                (pipeline_ci(&j.status), j.status.replace('_', " "))
+            };
+            Check { name: j.name, group: j.stage.filter(|s| !s.is_empty()), ci, label }
+        })
+        .collect();
+    sort_checks(&mut checks);
+    checks
 }
 
 /// Percent-encode a project path for `projects/:id` API routes.
@@ -135,6 +293,69 @@ impl Provider for GitLab<'_> {
 
     fn fetch_head(&self, pr: &Pr, remote: &str) -> FetchPlan {
         plan_for(pr, remote, format!("refs/merge-requests/{}/head", pr.number))
+    }
+
+    /// MR view, notes and pipeline jobs are separate calls, run in parallel;
+    /// each section reports its own failure. Jobs are paged (up to
+    /// `MAX_JOB_PAGES`); bridges (trigger jobs) are best-effort.
+    fn pr_details(&self, repo: &RepoRef, cwd: &Path, number: u64) -> PrDetails {
+        let url = format!("https://{}/{}", repo.host, repo.path);
+        let project = encode_path(&repo.path);
+        let iid = number.to_string();
+        let notes_route =
+            format!("projects/{project}/merge_requests/{iid}/notes?sort=desc&per_page={NOTES_PAGE}");
+        let pipes_route = format!("projects/{project}/merge_requests/{iid}/pipelines");
+        let host = repo.host.as_str();
+        let run = |args: &[&str]| self.runner.run("glab", args, Some(cwd));
+        let section = |out: Result<crate::cmd::Output, crate::cmd::RunError>| match out {
+            Ok(o) if o.success => Ok(o.stdout),
+            other => Err(cli_error("glab", host, other)),
+        };
+
+        let (view, notes, checks) = std::thread::scope(|s| {
+            let view = s.spawn(|| run(&["mr", "view", &iid, "-R", &url, "-F", "json"]));
+            let notes = s.spawn(|| run(&["api", "--hostname", host, &notes_route]));
+            let checks = s.spawn(|| {
+                let pipes = section(run(&["api", "--hostname", host, &pipes_route]))?;
+                let Some((pid, project_id)) = parsed(latest_pipeline(&pipes))? else {
+                    return Ok(Checks::default());
+                };
+                let in_project = project_id.map(|id| id.to_string()).unwrap_or_else(|| project.clone());
+                let pipeline = format!("projects/{in_project}/pipelines/{pid}");
+
+                let mut jobs = Vec::new();
+                let mut more_unknown = false;
+                for page in 1..=MAX_JOB_PAGES {
+                    let route = format!("{pipeline}/jobs?per_page={JOBS_PAGE}&page={page}");
+                    let batch = parsed(job_page(&section(run(&["api", "--hostname", host, &route]))?))?;
+                    let full = batch.len() >= JOBS_PAGE;
+                    jobs.extend(batch);
+                    if !full {
+                        break;
+                    }
+                    more_unknown = page == MAX_JOB_PAGES;
+                }
+
+                // Downstream pipeline triggers; an older or restricted
+                // instance refusing this route just leaves them out.
+                let bridges_route = format!("{pipeline}/bridges?per_page={JOBS_PAGE}");
+                if let Ok(o) = run(&["api", "--hostname", host, &bridges_route])
+                    && o.success
+                    && let Ok(bridges) = job_page(&o.stdout)
+                {
+                    jobs.extend(bridges);
+                }
+
+                Ok(Checks { items: jobs_to_checks(jobs), more_unknown })
+            });
+            (view.join().unwrap(), notes.join().unwrap(), checks.join().unwrap())
+        });
+
+        PrDetails {
+            meta: section(view).and_then(|j| parsed(parse_mr_view(&j))),
+            checks,
+            comments: section(notes).and_then(|j| parsed(parse_notes(&j))),
+        }
     }
 }
 

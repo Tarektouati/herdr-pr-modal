@@ -1,5 +1,6 @@
 //! Provider-neutral PR model, grouping and filtering.
 
+use crate::provider::ProviderError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,6 +34,108 @@ pub struct Listing {
     /// Login of the authenticated user, used for grouping.
     pub viewer: String,
     pub prs: Vec<Pr>,
+}
+
+/// Read-only details for the preview view. Each section loads (or fails)
+/// on its own, so a partial fetch still renders what it got. Held in memory
+/// only, never written to the cache.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PrDetails {
+    /// Meta and description come from the same call on both forges.
+    pub meta: Result<PrMeta, ProviderError>,
+    pub checks: Result<Checks, ProviderError>,
+    pub comments: Result<Comments, ProviderError>,
+}
+
+impl PrDetails {
+    /// Every section failed with the same error (one failed call).
+    pub fn failed(e: ProviderError) -> Self {
+        Self { meta: Err(e.clone()), checks: Err(e.clone()), comments: Err(e) }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PrMeta {
+    pub author: String,
+    pub head_branch: String,
+    pub base_branch: String,
+    pub is_draft: bool,
+    /// `approved`, `changes requested` or `review required`.
+    pub review_decision: Option<String>,
+    pub reviewers: Vec<Reviewer>,
+    pub labels: Vec<String>,
+    pub additions: Option<u64>,
+    pub deletions: Option<u64>,
+    /// A string because GitLab reports e.g. `1000+`.
+    pub changed_files: Option<String>,
+    /// ISO 8601 timestamps as the forge sends them.
+    pub created_at: String,
+    pub updated_at: String,
+    pub body: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reviewer {
+    pub login: String,
+    /// `approved`, `changes requested`, `commented`, `pending`…; `None` when
+    /// the forge does not say.
+    pub state: Option<String>,
+}
+
+/// One CI check run, status context or pipeline job. `Ci::None` means
+/// skipped, neutral or manual.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Check {
+    pub name: String,
+    /// Workflow (GitHub) or stage (GitLab).
+    pub group: Option<String>,
+    pub ci: Ci,
+    /// Raw status, lowercased, e.g. `failure`, `skipped`, `manual`.
+    pub label: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Checks {
+    /// Failures first (see `sort_checks`).
+    pub items: Vec<Check>,
+    /// The forge has more checks than were fetched.
+    pub more_unknown: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Comments {
+    /// Oldest → newest, at most `MAX_COMMENTS`.
+    pub items: Vec<Comment>,
+    /// Comments before `items` that are not shown.
+    pub earlier: usize,
+    /// The forge returned a full page, so there may be more than `earlier`.
+    pub more_unknown: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Comment {
+    pub author: String,
+    pub created_at: String,
+    pub body: String,
+}
+
+pub const MAX_COMMENTS: usize = 20;
+
+/// Keep the latest `MAX_COMMENTS` of `all` (oldest → newest).
+pub fn latest_comments(mut all: Vec<Comment>) -> Comments {
+    let earlier = all.len().saturating_sub(MAX_COMMENTS);
+    let items = all.split_off(earlier);
+    Comments { items, earlier, more_unknown: false }
+}
+
+/// Failures first, then pending, pass and skipped; stable within each.
+pub fn sort_checks(checks: &mut [Check]) {
+    checks.sort_by_key(|c| match c.ci {
+        Ci::Fail => 0,
+        Ci::Pending => 1,
+        Ci::Pass => 2,
+        Ci::None => 3,
+    });
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -171,6 +274,28 @@ mod tests {
         for q in ["#2", "#", "bob", "alice bob", "234"] {
             assert!(!matches(&p, q), "{q:?} should not match");
         }
+    }
+
+    #[test]
+    fn latest_comments_caps_and_counts_earlier() {
+        let c =
+            |i: usize| Comment { author: format!("u{i}"), created_at: String::new(), body: String::new() };
+        let few = latest_comments((0..3).map(c).collect());
+        assert_eq!((few.items.len(), few.earlier), (3, 0));
+        let many = latest_comments((0..25).map(c).collect());
+        assert_eq!((many.items.len(), many.earlier), (MAX_COMMENTS, 5));
+        assert_eq!(many.items[0].author, "u5");
+        assert_eq!(many.items.last().unwrap().author, "u24");
+    }
+
+    #[test]
+    fn checks_sort_by_severity_stably() {
+        let c = |n: &str, ci| Check { name: n.into(), group: None, ci, label: String::new() };
+        let mut v =
+            vec![c("a", Ci::Pass), c("b", Ci::None), c("c", Ci::Fail), c("d", Ci::Pass), c("e", Ci::Pending)];
+        sort_checks(&mut v);
+        let names: Vec<&str> = v.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(names, ["c", "e", "a", "d", "b"]);
     }
 
     #[test]

@@ -1,8 +1,8 @@
 //! Modal state and key handling, independent of the terminal.
 
-use crate::model::{Group, Listing, grouped};
+use crate::model::{Group, Listing, PrDetails, grouped};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// One error line for the modal: what failed and the command that fixes it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,6 +32,23 @@ pub enum Action {
     Refresh,
     /// Open the worktree for `listing.prs[i]`.
     Open(usize),
+    /// Fetch preview details for `listing.prs[i]` (not cached, not in flight).
+    Preview(usize),
+    /// Refetch preview details for `listing.prs[i]`.
+    RefreshDetail(usize),
+}
+
+/// Which screen the modal shows. The detail view is keyed by PR number, not
+/// index, so it survives a list refresh that reorders `listing.prs`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum View {
+    #[default]
+    List,
+    Detail {
+        number: u64,
+        /// First visible body line; the renderer clamps it.
+        scroll: usize,
+    },
 }
 
 #[derive(Debug, Default)]
@@ -59,6 +76,11 @@ pub struct App {
     pub scroll: usize,
     /// PR numbers that already have a local worktree.
     pub worktree_prs: HashSet<u64>,
+    pub view: View,
+    /// Preview details by PR number, for the popup's lifetime only.
+    pub details: HashMap<u64, PrDetails>,
+    /// PR numbers whose details are being fetched.
+    pub details_loading: HashSet<u64>,
 }
 
 impl App {
@@ -139,6 +161,14 @@ impl App {
         self.banner = None;
         let page = page.max(1) as isize;
 
+        if matches!(self.view, View::Detail { .. }) {
+            if self.detail_pr().is_some() {
+                return self.handle_detail_key(key, page);
+            }
+            // The PR left the listing after a refresh.
+            self.view = View::List;
+        }
+
         if self.filtering {
             match key.code {
                 KeyCode::Esc => {
@@ -188,9 +218,72 @@ impl App {
             KeyCode::Char('G') | KeyCode::End => self.move_by(isize::MAX / 2),
             KeyCode::Char('r') if !self.loading => return Action::Refresh,
             KeyCode::Enter => return self.open_selected(),
+            KeyCode::Char('p') | KeyCode::Char('l') | KeyCode::Right => return self.preview_selected(),
             _ => {}
         }
         Action::None
+    }
+
+    fn handle_detail_key(&mut self, key: KeyEvent, page: isize) -> Action {
+        let View::Detail { number, scroll } = &mut self.view else { return Action::None };
+        let number = *number;
+        let page = page as usize;
+        match key.code {
+            KeyCode::Char('j') | KeyCode::Down => *scroll = scroll.saturating_add(1),
+            KeyCode::Char('k') | KeyCode::Up => *scroll = scroll.saturating_sub(1),
+            KeyCode::PageDown => *scroll = scroll.saturating_add(page),
+            KeyCode::PageUp => *scroll = scroll.saturating_sub(page),
+            KeyCode::Char('g') | KeyCode::Home => *scroll = 0,
+            KeyCode::Char('G') | KeyCode::End => *scroll = usize::MAX,
+            KeyCode::Char('[') => return self.step_detail(-1),
+            KeyCode::Char(']') => return self.step_detail(1),
+            KeyCode::Enter => return self.detail_pr().map_or(Action::None, Action::Open),
+            KeyCode::Char('r') if !self.details_loading.contains(&number) => {
+                if let Some(i) = self.detail_pr() {
+                    self.details_loading.insert(number);
+                    return Action::RefreshDetail(i);
+                }
+            }
+            KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => self.view = View::List,
+            _ => {}
+        }
+        Action::None
+    }
+
+    /// Index into `listing.prs` of the PR shown in the detail view.
+    pub fn detail_pr(&self) -> Option<usize> {
+        let View::Detail { number, .. } = self.view else { return None };
+        self.listing.as_ref()?.prs.iter().position(|p| p.number == number)
+    }
+
+    fn preview_selected(&mut self) -> Action {
+        let Some(i) = self.selected_pr() else { return Action::None };
+        self.show_detail(i)
+    }
+
+    /// Previous / next PR in the current (filtered) list order. The list
+    /// selection follows, so going back lands on the PR last viewed.
+    fn step_detail(&mut self, delta: isize) -> Action {
+        self.move_by(delta);
+        match self.selected_pr() {
+            Some(i) if Some(i) != self.detail_pr() => self.show_detail(i),
+            _ => Action::None,
+        }
+    }
+
+    fn show_detail(&mut self, i: usize) -> Action {
+        let Some(number) = self.listing.as_ref().map(|l| l.prs[i].number) else { return Action::None };
+        self.view = View::Detail { number, scroll: 0 };
+        if self.details.contains_key(&number) || !self.details_loading.insert(number) {
+            return Action::None;
+        }
+        Action::Preview(i)
+    }
+
+    /// Store fetched details; reopening this PR's preview reuses them.
+    pub fn set_detail(&mut self, number: u64, details: PrDetails) {
+        self.details_loading.remove(&number);
+        self.details.insert(number, details);
     }
 
     fn open_selected(&self) -> Action {
@@ -342,5 +435,122 @@ mod tests {
         a.selected = 0; // #2 under "mine"
         a.ensure_visible(3);
         assert_eq!(a.scroll, 0);
+    }
+
+    // --- Detail view -------------------------------------------------------
+
+    fn details() -> PrDetails {
+        PrDetails::failed(crate::provider::ProviderError::new("boom", None))
+    }
+
+    fn number_shown(a: &App) -> Option<u64> {
+        if let View::Detail { number, .. } = a.view { Some(number) } else { None }
+    }
+
+    #[test]
+    fn preview_keys_open_detail_and_fetch_once() {
+        for code in [KeyCode::Char('p'), KeyCode::Char('l'), KeyCode::Right] {
+            let mut a = app();
+            assert_eq!(a.handle_key(key(code), 10), Action::Preview(1), "{code:?}"); // #2, first under "mine"
+            assert_eq!(number_shown(&a), Some(2));
+            assert!(a.details_loading.contains(&2));
+            // Back and in again while in flight: no second fetch.
+            a.handle_key(key(KeyCode::Esc), 10);
+            assert_eq!(a.handle_key(key(code), 10), Action::None);
+            // Once loaded, reopening uses the in-memory result.
+            a.set_detail(2, details());
+            a.handle_key(key(KeyCode::Esc), 10);
+            assert_eq!(a.handle_key(key(code), 10), Action::None);
+            assert!(a.details.contains_key(&2) && a.details_loading.is_empty());
+        }
+    }
+
+    #[test]
+    fn detail_scroll_keys() {
+        let mut a = app();
+        a.handle_key(key(KeyCode::Char('p')), 10);
+        let scroll = |a: &App| if let View::Detail { scroll, .. } = a.view { scroll } else { panic!() };
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        a.handle_key(key(KeyCode::Down), 10);
+        assert_eq!(scroll(&a), 2);
+        a.handle_key(key(KeyCode::Char('k')), 10);
+        a.handle_key(key(KeyCode::Up), 10);
+        a.handle_key(key(KeyCode::Up), 10);
+        assert_eq!(scroll(&a), 0);
+        a.handle_key(key(KeyCode::PageDown), 10);
+        assert_eq!(scroll(&a), 10);
+        a.handle_key(key(KeyCode::PageUp), 10);
+        assert_eq!(scroll(&a), 0);
+        a.handle_key(key(KeyCode::Char('G')), 10);
+        assert_eq!(scroll(&a), usize::MAX); // clamped by the renderer
+        a.handle_key(key(KeyCode::Char('g')), 10);
+        assert_eq!(scroll(&a), 0);
+    }
+
+    #[test]
+    fn brackets_walk_the_filtered_list_and_back_keeps_selection() {
+        let mut a = app();
+        a.query = "m".into(); // #2 (author "me") and #3 ("gamma")
+        assert_eq!(a.selectable(), vec![1, 2]);
+        a.handle_key(key(KeyCode::Char('p')), 10);
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        assert_eq!(a.handle_key(key(KeyCode::Char(']')), 10), Action::Preview(2));
+        assert_eq!(number_shown(&a), Some(3));
+        assert_eq!(a.view, View::Detail { number: 3, scroll: 0 }, "scroll resets");
+        assert_eq!(a.handle_key(key(KeyCode::Char(']')), 10), Action::None, "clamped at the end");
+        assert_eq!(number_shown(&a), Some(3));
+        assert_eq!(a.handle_key(key(KeyCode::Char('[')), 10), Action::None, "#2 already in flight");
+        assert_eq!(number_shown(&a), Some(2));
+        a.handle_key(key(KeyCode::Char(']')), 10);
+        for back in [KeyCode::Esc, KeyCode::Left, KeyCode::Char('h')] {
+            a.view = View::Detail { number: 3, scroll: 0 };
+            assert_eq!(a.handle_key(key(back), 10), Action::None, "{back:?}");
+            assert_eq!(a.view, View::List);
+            assert_eq!(a.query, "m");
+            assert_eq!(a.selected_pr(), Some(2), "selection stays on the PR last viewed");
+        }
+    }
+
+    #[test]
+    fn enter_opens_and_r_refetches_in_detail() {
+        let mut a = app();
+        a.handle_key(key(KeyCode::Char('p')), 10);
+        assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::None, "already fetching");
+        a.set_detail(2, details()); // every section failed
+        assert_eq!(a.handle_key(key(KeyCode::Enter), 10), Action::Open(1));
+        assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::RefreshDetail(1));
+        assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::None);
+        // `r` in the detail view never refreshes the list.
+        assert!(a.details_loading.contains(&2));
+    }
+
+    #[test]
+    fn preview_keys_are_text_while_filtering() {
+        let mut a = app();
+        a.handle_key(key(KeyCode::Char('/')), 10);
+        a.handle_key(key(KeyCode::Char('l')), 10);
+        a.handle_key(key(KeyCode::Char('p')), 10);
+        assert_eq!(a.query, "lp");
+        assert_eq!(a.view, View::List);
+    }
+
+    #[test]
+    fn detail_survives_listing_refresh() {
+        let mut a = app();
+        a.handle_key(key(KeyCode::Char('p')), 10); // #2
+        a.set_listing(
+            Listing {
+                viewer: "me".into(),
+                prs: vec![pr(9, "z", "new"), pr(3, "y", "gamma"), pr(2, "me", "beta")],
+            },
+            None,
+        );
+        assert_eq!(a.detail_pr(), Some(2));
+        assert_eq!(a.handle_key(key(KeyCode::Enter), 10), Action::Open(2));
+        // The PR was closed upstream: the next key falls back to the list.
+        a.set_listing(Listing { viewer: "me".into(), prs: vec![pr(9, "z", "new")] }, None);
+        assert_eq!(a.detail_pr(), None);
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        assert_eq!(a.view, View::List);
     }
 }
