@@ -3,6 +3,7 @@
 use crate::model::{Group, Listing, PrDetails, grouped};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 
 /// One error line for the modal: what failed and the command that fixes it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,6 +37,8 @@ pub enum Action {
     Preview(usize),
     /// Refetch preview details for `listing.prs[i]`.
     RefreshDetail(usize),
+    /// The active tab changed to `tabs[i]`; load it if it never was.
+    SwitchTab(usize),
 }
 
 /// Which screen the modal shows. The detail view is keyed by PR number, not
@@ -51,8 +54,15 @@ pub enum View {
     },
 }
 
+/// One repo's listing and everything the user did in it. Each tab keeps
+/// its own filter, selection, scroll and view across switches.
 #[derive(Debug, Default)]
-pub struct App {
+pub struct Tab {
+    /// Repo name shown in the tab bar.
+    pub label: String,
+    pub root: PathBuf,
+    /// Its first load has been started (tabs load on first visit).
+    pub started: bool,
     /// `owner/repo`, once resolved.
     pub repo_label: Option<String>,
     pub listing: Option<Listing>,
@@ -60,14 +70,10 @@ pub struct App {
     pub loading: bool,
     /// Age of the cached listing being shown, if it came from cache.
     pub cached_age: Option<u64>,
-    /// Unrecoverable (not a repo, no remote, unknown provider): any key closes.
-    pub fatal: Option<ErrRow>,
     /// Load error with no data to show.
     pub load_error: Option<ErrRow>,
     /// Error shown above the list (failed refresh, failed open).
     pub banner: Option<ErrRow>,
-    /// PR being opened; keys are ignored meanwhile.
-    pub busy: Option<String>,
     pub query: String,
     pub filtering: bool,
     /// Position in `selectable()`.
@@ -83,9 +89,102 @@ pub struct App {
     pub details_loading: HashSet<u64>,
 }
 
+#[derive(Debug)]
+pub struct App {
+    /// Never empty: a placeholder tab shows "loading" until discovery ends.
+    pub tabs: Vec<Tab>,
+    pub active: usize,
+    /// First tab shown in the tab bar; the renderer keeps `active` visible.
+    pub tab_scroll: usize,
+    /// Unrecoverable (bad config, no repo at all): any key closes.
+    pub fatal: Option<ErrRow>,
+    /// PR being opened; keys are ignored meanwhile.
+    pub busy: Option<String>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     pub fn new() -> Self {
-        Self { loading: true, ..Self::default() }
+        Self {
+            tabs: vec![Tab { loading: true, ..Tab::default() }],
+            active: 0,
+            tab_scroll: 0,
+            fatal: None,
+            busy: None,
+        }
+    }
+
+    /// Replace the placeholder with the discovered tabs. An empty list is
+    /// ignored so `tab()` always has something to show.
+    pub fn set_tabs(&mut self, tabs: Vec<Tab>, active: usize) {
+        if tabs.is_empty() {
+            return;
+        }
+        self.active = active.min(tabs.len() - 1);
+        self.tabs = tabs;
+        self.tab_scroll = 0;
+    }
+
+    pub fn tab(&self) -> &Tab {
+        &self.tabs[self.active]
+    }
+
+    pub fn tab_mut(&mut self) -> &mut Tab {
+        &mut self.tabs[self.active]
+    }
+
+    pub fn handle_key(&mut self, key: KeyEvent, page: usize) -> Action {
+        let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+        if ctrl && key.code == KeyCode::Char('c') && self.busy.is_none() {
+            return Action::Quit;
+        }
+        if self.fatal.is_some() {
+            return match key.code {
+                KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => Action::Quit,
+                _ => Action::None,
+            };
+        }
+        if self.busy.is_some() {
+            return Action::None;
+        }
+        let n = self.tabs.len();
+        let tab = self.tab_mut();
+        tab.banner = None;
+        if matches!(tab.view, View::Detail { .. }) && tab.detail_pr().is_none() {
+            // The PR left the listing after a refresh.
+            tab.view = View::List;
+        }
+        if n > 1 && !tab.filtering && tab.view == View::List {
+            match key.code {
+                KeyCode::Tab => return self.switch_to((self.active + 1) % n),
+                KeyCode::BackTab => return self.switch_to((self.active + n - 1) % n),
+                KeyCode::Char(c @ '1'..='9') if !ctrl => {
+                    let i = c as usize - '1' as usize;
+                    return if i < n { self.switch_to(i) } else { Action::None };
+                }
+                _ => {}
+            }
+        }
+        self.tab_mut().handle_key(key, page)
+    }
+
+    fn switch_to(&mut self, i: usize) -> Action {
+        if i == self.active {
+            return Action::None;
+        }
+        self.active = i;
+        Action::SwitchTab(i)
+    }
+}
+
+impl Tab {
+    pub fn new(label: impl Into<String>, root: PathBuf) -> Self {
+        Self { label: label.into(), root, ..Self::default() }
     }
 
     pub fn rows(&self) -> Vec<Row> {
@@ -144,29 +243,12 @@ impl App {
         self.scroll = self.scroll.min(max_scroll);
     }
 
-    pub fn handle_key(&mut self, key: KeyEvent, page: usize) -> Action {
+    /// Keys for this tab, once `App` has handled quit, busy and tab switches.
+    fn handle_key(&mut self, key: KeyEvent, page: usize) -> Action {
         let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
-        if ctrl && key.code == KeyCode::Char('c') && self.busy.is_none() {
-            return Action::Quit;
-        }
-        if self.fatal.is_some() {
-            return match key.code {
-                KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => Action::Quit,
-                _ => Action::None,
-            };
-        }
-        if self.busy.is_some() {
-            return Action::None;
-        }
-        self.banner = None;
         let page = page.max(1) as isize;
-
         if matches!(self.view, View::Detail { .. }) {
-            if self.detail_pr().is_some() {
-                return self.handle_detail_key(key, page);
-            }
-            // The PR left the listing after a refresh.
-            self.view = View::List;
+            return self.handle_detail_key(key, page);
         }
 
         if self.filtering {
@@ -335,8 +417,8 @@ mod tests {
 
     fn app() -> App {
         let mut a = App::new();
-        a.loading = false;
-        a.set_listing(
+        a.tab_mut().loading = false;
+        a.tab_mut().set_listing(
             Listing {
                 viewer: "me".into(),
                 prs: vec![pr(1, "x", "alpha"), pr(2, "me", "beta"), pr(3, "y", "gamma")],
@@ -350,7 +432,7 @@ mod tests {
     fn rows_group_with_blank_separators() {
         let a = app();
         assert_eq!(
-            a.rows(),
+            a.tab().rows(),
             vec![
                 Row::Header(Group::Mine),
                 Row::Pr(1),
@@ -360,16 +442,16 @@ mod tests {
                 Row::Pr(2)
             ]
         );
-        assert_eq!(a.selectable(), vec![1, 0, 2]);
+        assert_eq!(a.tab().selectable(), vec![1, 0, 2]);
     }
 
     #[test]
     fn navigation_is_clamped() {
         let mut a = app();
         a.handle_key(key(KeyCode::Char('k')), 10);
-        assert_eq!(a.selected, 0);
+        assert_eq!(a.tab().selected, 0);
         a.handle_key(key(KeyCode::PageDown), 10);
-        assert_eq!(a.selected, 2);
+        assert_eq!(a.tab().selected, 2);
         assert_eq!(a.handle_key(key(KeyCode::Enter), 10), Action::Open(2));
     }
 
@@ -380,14 +462,14 @@ mod tests {
         for c in "gam".chars() {
             a.handle_key(key(KeyCode::Char(c)), 10);
         }
-        assert_eq!(a.selectable(), vec![2]);
+        assert_eq!(a.tab().selectable(), vec![2]);
         // j is text while filtering, not movement.
         a.handle_key(key(KeyCode::Char('j')), 10);
-        assert_eq!(a.query, "gamj");
-        assert!(a.selectable().is_empty());
+        assert_eq!(a.tab().query, "gamj");
+        assert!(a.tab().selectable().is_empty());
         assert_eq!(a.handle_key(key(KeyCode::Esc), 10), Action::None);
-        assert!(!a.filtering);
-        assert!(a.query.is_empty());
+        assert!(!a.tab().filtering);
+        assert!(a.tab().query.is_empty());
         assert_eq!(a.handle_key(key(KeyCode::Esc), 10), Action::Quit);
     }
 
@@ -416,25 +498,25 @@ mod tests {
         let mut a = app();
         a.handle_key(key(KeyCode::Char('j')), 10); // → #1
         assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::Refresh);
-        a.set_listing(
+        a.tab_mut().set_listing(
             Listing { viewer: "me".into(), prs: vec![pr(9, "z", "new"), pr(1, "x", "alpha")] },
             None,
         );
-        assert_eq!(a.selected_pr().map(|i| a.listing.as_ref().unwrap().prs[i].number), Some(1));
+        assert_eq!(a.tab().selected_pr().map(|i| a.tab().listing.as_ref().unwrap().prs[i].number), Some(1));
     }
 
     #[test]
     fn scroll_follows_selection_and_shows_group_header() {
         let mut a = app();
-        a.selected = 2; // #3, line 5
-        a.ensure_visible(3);
-        assert_eq!(a.scroll, 3);
-        a.selected = 1; // #1, first in "others", header on line 3
-        a.ensure_visible(3);
-        assert_eq!(a.scroll, 3);
-        a.selected = 0; // #2 under "mine"
-        a.ensure_visible(3);
-        assert_eq!(a.scroll, 0);
+        a.tab_mut().selected = 2; // #3, line 5
+        a.tab_mut().ensure_visible(3);
+        assert_eq!(a.tab().scroll, 3);
+        a.tab_mut().selected = 1; // #1, first in "others", header on line 3
+        a.tab_mut().ensure_visible(3);
+        assert_eq!(a.tab().scroll, 3);
+        a.tab_mut().selected = 0; // #2 under "mine"
+        a.tab_mut().ensure_visible(3);
+        assert_eq!(a.tab().scroll, 0);
     }
 
     // --- Detail view -------------------------------------------------------
@@ -444,7 +526,7 @@ mod tests {
     }
 
     fn number_shown(a: &App) -> Option<u64> {
-        if let View::Detail { number, .. } = a.view { Some(number) } else { None }
+        if let View::Detail { number, .. } = a.tab().view { Some(number) } else { None }
     }
 
     #[test]
@@ -453,15 +535,15 @@ mod tests {
             let mut a = app();
             assert_eq!(a.handle_key(key(code), 10), Action::Preview(1), "{code:?}"); // #2, first under "mine"
             assert_eq!(number_shown(&a), Some(2));
-            assert!(a.details_loading.contains(&2));
+            assert!(a.tab().details_loading.contains(&2));
             // Back and in again while in flight: no second fetch.
             a.handle_key(key(KeyCode::Esc), 10);
             assert_eq!(a.handle_key(key(code), 10), Action::None);
             // Once loaded, reopening uses the in-memory result.
-            a.set_detail(2, details());
+            a.tab_mut().set_detail(2, details());
             a.handle_key(key(KeyCode::Esc), 10);
             assert_eq!(a.handle_key(key(code), 10), Action::None);
-            assert!(a.details.contains_key(&2) && a.details_loading.is_empty());
+            assert!(a.tab().details.contains_key(&2) && a.tab().details_loading.is_empty());
         }
     }
 
@@ -469,7 +551,7 @@ mod tests {
     fn detail_scroll_keys() {
         let mut a = app();
         a.handle_key(key(KeyCode::Char('p')), 10);
-        let scroll = |a: &App| if let View::Detail { scroll, .. } = a.view { scroll } else { panic!() };
+        let scroll = |a: &App| if let View::Detail { scroll, .. } = a.tab().view { scroll } else { panic!() };
         a.handle_key(key(KeyCode::Char('j')), 10);
         a.handle_key(key(KeyCode::Down), 10);
         assert_eq!(scroll(&a), 2);
@@ -490,24 +572,24 @@ mod tests {
     #[test]
     fn brackets_walk_the_filtered_list_and_back_keeps_selection() {
         let mut a = app();
-        a.query = "m".into(); // #2 (author "me") and #3 ("gamma")
-        assert_eq!(a.selectable(), vec![1, 2]);
+        a.tab_mut().query = "m".into(); // #2 (author "me") and #3 ("gamma")
+        assert_eq!(a.tab().selectable(), vec![1, 2]);
         a.handle_key(key(KeyCode::Char('p')), 10);
         a.handle_key(key(KeyCode::Char('j')), 10);
         assert_eq!(a.handle_key(key(KeyCode::Char(']')), 10), Action::Preview(2));
         assert_eq!(number_shown(&a), Some(3));
-        assert_eq!(a.view, View::Detail { number: 3, scroll: 0 }, "scroll resets");
+        assert_eq!(a.tab().view, View::Detail { number: 3, scroll: 0 }, "scroll resets");
         assert_eq!(a.handle_key(key(KeyCode::Char(']')), 10), Action::None, "clamped at the end");
         assert_eq!(number_shown(&a), Some(3));
         assert_eq!(a.handle_key(key(KeyCode::Char('[')), 10), Action::None, "#2 already in flight");
         assert_eq!(number_shown(&a), Some(2));
         a.handle_key(key(KeyCode::Char(']')), 10);
         for back in [KeyCode::Esc, KeyCode::Left, KeyCode::Char('h')] {
-            a.view = View::Detail { number: 3, scroll: 0 };
+            a.tab_mut().view = View::Detail { number: 3, scroll: 0 };
             assert_eq!(a.handle_key(key(back), 10), Action::None, "{back:?}");
-            assert_eq!(a.view, View::List);
-            assert_eq!(a.query, "m");
-            assert_eq!(a.selected_pr(), Some(2), "selection stays on the PR last viewed");
+            assert_eq!(a.tab().view, View::List);
+            assert_eq!(a.tab().query, "m");
+            assert_eq!(a.tab().selected_pr(), Some(2), "selection stays on the PR last viewed");
         }
     }
 
@@ -516,12 +598,12 @@ mod tests {
         let mut a = app();
         a.handle_key(key(KeyCode::Char('p')), 10);
         assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::None, "already fetching");
-        a.set_detail(2, details()); // every section failed
+        a.tab_mut().set_detail(2, details()); // every section failed
         assert_eq!(a.handle_key(key(KeyCode::Enter), 10), Action::Open(1));
         assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::RefreshDetail(1));
         assert_eq!(a.handle_key(key(KeyCode::Char('r')), 10), Action::None);
         // `r` in the detail view never refreshes the list.
-        assert!(a.details_loading.contains(&2));
+        assert!(a.tab().details_loading.contains(&2));
     }
 
     #[test]
@@ -530,27 +612,114 @@ mod tests {
         a.handle_key(key(KeyCode::Char('/')), 10);
         a.handle_key(key(KeyCode::Char('l')), 10);
         a.handle_key(key(KeyCode::Char('p')), 10);
-        assert_eq!(a.query, "lp");
-        assert_eq!(a.view, View::List);
+        assert_eq!(a.tab().query, "lp");
+        assert_eq!(a.tab().view, View::List);
     }
 
     #[test]
     fn detail_survives_listing_refresh() {
         let mut a = app();
         a.handle_key(key(KeyCode::Char('p')), 10); // #2
-        a.set_listing(
+        a.tab_mut().set_listing(
             Listing {
                 viewer: "me".into(),
                 prs: vec![pr(9, "z", "new"), pr(3, "y", "gamma"), pr(2, "me", "beta")],
             },
             None,
         );
-        assert_eq!(a.detail_pr(), Some(2));
+        assert_eq!(a.tab().detail_pr(), Some(2));
         assert_eq!(a.handle_key(key(KeyCode::Enter), 10), Action::Open(2));
         // The PR was closed upstream: the next key falls back to the list.
-        a.set_listing(Listing { viewer: "me".into(), prs: vec![pr(9, "z", "new")] }, None);
-        assert_eq!(a.detail_pr(), None);
+        a.tab_mut().set_listing(Listing { viewer: "me".into(), prs: vec![pr(9, "z", "new")] }, None);
+        assert_eq!(a.tab().detail_pr(), None);
         a.handle_key(key(KeyCode::Char('j')), 10);
-        assert_eq!(a.view, View::List);
+        assert_eq!(a.tab().view, View::List);
+    }
+
+    // --- Repo tabs ---------------------------------------------------------
+
+    fn tabs(n: usize) -> App {
+        let mut a = App::new();
+        let tabs = (0..n)
+            .map(|i| {
+                let mut t = Tab::new(format!("repo{i}"), PathBuf::from(format!("/r{i}")));
+                t.set_listing(app().tabs.remove(0).listing.unwrap(), None);
+                t
+            })
+            .collect();
+        a.set_tabs(tabs, 0);
+        a
+    }
+
+    fn back_tab() -> KeyEvent {
+        KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT)
+    }
+
+    #[test]
+    fn tab_keys_wrap_and_number_keys_jump() {
+        let mut a = tabs(3);
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::SwitchTab(1));
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::SwitchTab(2));
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::SwitchTab(0));
+        assert_eq!(a.handle_key(back_tab(), 10), Action::SwitchTab(2));
+        assert_eq!(a.handle_key(key(KeyCode::Char('1')), 10), Action::SwitchTab(0));
+        assert_eq!(a.handle_key(key(KeyCode::Char('1')), 10), Action::None, "already there");
+        assert_eq!(a.handle_key(key(KeyCode::Char('9')), 10), Action::None, "no such tab");
+        assert_eq!(a.active, 0);
+    }
+
+    #[test]
+    fn switching_keeps_each_tabs_query_selection_and_scroll() {
+        let mut a = tabs(2);
+        a.handle_key(key(KeyCode::Char('/')), 10);
+        a.handle_key(key(KeyCode::Char('a')), 10);
+        a.handle_key(key(KeyCode::Enter), 10); // opens, leaves filter mode on
+        a.tab_mut().filtering = false;
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        a.tab_mut().scroll = 2;
+        let (q, sel) = (a.tab().query.clone(), a.tab().selected);
+        a.handle_key(key(KeyCode::Tab), 10);
+        assert_eq!((a.tab().query.as_str(), a.tab().selected, a.tab().scroll), ("", 0, 0));
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        a.handle_key(key(KeyCode::Char('1')), 10);
+        assert_eq!((a.tab().query.clone(), a.tab().selected, a.tab().scroll), (q, sel, 2));
+        a.handle_key(key(KeyCode::Char('2')), 10);
+        assert_eq!(a.tab().selected, 2);
+    }
+
+    #[test]
+    fn switch_keys_are_ignored_while_filtering_and_in_detail() {
+        let mut a = tabs(2);
+        a.handle_key(key(KeyCode::Char('/')), 10);
+        assert_eq!(a.handle_key(key(KeyCode::Char('2')), 10), Action::None);
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::None);
+        assert_eq!((a.active, a.tab().query.as_str()), (0, "2"));
+        a.handle_key(key(KeyCode::Esc), 10);
+        a.handle_key(key(KeyCode::Char('p')), 10);
+        assert_eq!(a.handle_key(key(KeyCode::Char('2')), 10), Action::None);
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::None);
+        assert_eq!(a.active, 0);
+        a.handle_key(key(KeyCode::Esc), 10);
+        a.busy = Some("opening".into());
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::None, "busy");
+    }
+
+    #[test]
+    fn a_single_tab_ignores_switch_keys() {
+        let mut a = tabs(1);
+        assert_eq!(a.handle_key(key(KeyCode::Tab), 10), Action::None);
+        assert_eq!(a.handle_key(back_tab(), 10), Action::None);
+        assert_eq!(a.handle_key(key(KeyCode::Char('1')), 10), Action::None);
+        assert_eq!(a.active, 0);
+    }
+
+    #[test]
+    fn results_for_a_background_tab_stay_there() {
+        let mut a = tabs(2);
+        a.handle_key(key(KeyCode::Char('j')), 10);
+        a.tabs[1].set_listing(Listing { viewer: "me".into(), prs: vec![pr(7, "z", "other")] }, None);
+        assert_eq!(a.tab().selected, 1);
+        assert_eq!(a.tab().listing.as_ref().unwrap().prs.len(), 3);
     }
 }
