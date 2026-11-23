@@ -62,12 +62,12 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
         put(frame.buffer_mut(), area.x, area.y, area.width, "popup too small", base);
         return;
     }
-    if matches!(app.view, View::Detail { .. }) && app.fatal.is_none() {
-        if app.detail_pr().is_some() {
+    if matches!(app.tab().view, View::Detail { .. }) && app.fatal.is_none() {
+        if app.tab().detail_pr().is_some() {
             draw_detail(frame, app, p);
             return;
         }
-        app.view = View::List;
+        app.tab_mut().view = View::List;
     }
     let (x, w) = (area.x, area.width);
 
@@ -75,17 +75,17 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
     let title_style = base.add_modifier(Modifier::BOLD);
     let dim = Style::default().fg(p.overlay0).bg(p.panel_bg);
     let mut title = vec![Span::styled("open PRs", title_style)];
-    if let Some(repo) = &app.repo_label {
+    if let Some(repo) = &app.tab().repo_label {
         title.push(Span::styled(format!(" · {repo}"), title_style));
     }
-    if app.loading && app.listing.is_some() {
+    if app.tab().loading && app.tab().listing.is_some() {
         title.push(Span::styled(" · refreshing…", dim));
-    } else if let Some(age) = app.cached_age {
+    } else if let Some(age) = app.tab().cached_age {
         title.push(Span::styled(format!(" · cached {age}s"), dim));
     }
     let title_w = w.saturating_sub(BADGE_WIDTH + 1);
     frame.buffer_mut().set_line(x, area.y, &Line::from(title), title_w);
-    draw_badge(frame.buffer_mut(), area, if app.filtering { " esc back " } else { " esc close " }, p);
+    draw_badge(frame.buffer_mut(), area, if app.tab().filtering { " esc back " } else { " esc close " }, p);
 
     // Row 1: filter hint / live query / progress.
     let hy = area.y + 1;
@@ -98,13 +98,13 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
             &format!(" ⟳ {busy}"),
             Style::default().fg(p.accent).bg(p.panel_bg),
         );
-    } else if app.filtering {
-        let q = format!(" / {}", app.query);
+    } else if app.tab().filtering {
+        let q = format!(" / {}", app.tab().query);
         put(frame.buffer_mut(), x, hy, w, &q, base);
         let cx = (x + q.width() as u16).min(area.right() - 1);
         frame.set_cursor_position(Position::new(cx, hy));
-    } else if !app.query.is_empty() {
-        put(frame.buffer_mut(), x, hy, w, &format!(" / {}", app.query), dim);
+    } else if !app.tab().query.is_empty() {
+        put(frame.buffer_mut(), x, hy, w, &format!(" / {}", app.tab().query), dim);
     } else {
         put(frame.buffer_mut(), x, hy, w, HINT, dim);
     }
@@ -116,7 +116,7 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
     // Footer.
     let footer = if app.fatal.is_some() {
         FOOTER_FATAL
-    } else if app.filtering {
+    } else if app.tab().filtering {
         FOOTER_FILTER
     } else {
         FOOTER
@@ -174,27 +174,29 @@ fn draw_body(buf: &mut Buffer, body: Rect, app: &mut App, p: &Palette) {
     let wrap = |lines: Vec<Line<'static>>, buf: &mut Buffer| {
         Paragraph::new(lines).wrap(Wrap { trim: false }).render(body, buf);
     };
-    if let Some(e) = app.fatal.as_ref().or(app.load_error.as_ref().filter(|_| app.listing.is_none())) {
+    if let Some(e) =
+        app.fatal.as_ref().or(app.tab().load_error.as_ref().filter(|_| app.tab().listing.is_none()))
+    {
         wrap(vec![err_line(e, p)], buf);
         return;
     }
-    if app.listing.is_none() {
+    if app.tab().listing.is_none() {
         let s = Style::default().fg(p.overlay1).bg(bg);
         wrap(vec![Line::styled(" loading open PRs…", s)], buf);
         return;
     }
 
-    let area = draw_banner(buf, body, app.banner.as_ref(), p);
+    let area = draw_banner(buf, body, app.tab().banner.as_ref(), p);
     if area.height == 0 {
         return;
     }
 
-    let rows = app.rows();
+    let rows = app.tab().rows();
     if rows.is_empty() {
-        let msg = if app.listing.as_ref().is_some_and(|l| l.prs.is_empty()) {
+        let msg = if app.tab().listing.as_ref().is_some_and(|l| l.prs.is_empty()) {
             " no open PRs".to_string()
         } else {
-            format!(" no PRs match '{}'", app.query)
+            format!(" no PRs match '{}'", app.tab().query)
         };
         put(buf, area.x, area.y, area.width, &msg, Style::default().fg(p.overlay1).bg(bg));
         return;
@@ -203,10 +205,10 @@ fn draw_body(buf: &mut Buffer, body: Rect, app: &mut App, p: &Palette) {
     let viewport = usize::from(area.height);
     let needs_bar = rows.len() > viewport;
     let text_w = if needs_bar { area.width - 1 } else { area.width };
-    app.ensure_visible(viewport);
-    let selected = app.selected_pr();
+    app.tab_mut().ensure_visible(viewport);
+    let selected = app.tab().selected_pr();
     let app = &*app;
-    let Some(listing) = app.listing.as_ref() else { return };
+    let Some(listing) = app.tab().listing.as_ref() else { return };
     let num_w = rows
         .iter()
         .filter_map(|r| {
@@ -215,8 +217,8 @@ fn draw_body(buf: &mut Buffer, body: Rect, app: &mut App, p: &Palette) {
         .max()
         .unwrap_or(2);
 
-    for (line_no, row) in rows.iter().enumerate().skip(app.scroll).take(viewport) {
-        let y = area.y + (line_no - app.scroll) as u16;
+    for (line_no, row) in rows.iter().enumerate().skip(app.tab().scroll).take(viewport) {
+        let y = area.y + (line_no - app.tab().scroll) as u16;
         match row {
             Row::Blank => {}
             Row::Header(g) => {
@@ -226,8 +228,14 @@ fn draw_body(buf: &mut Buffer, body: Rect, app: &mut App, p: &Palette) {
             Row::Pr(i) => {
                 let pr = &listing.prs[*i];
                 let is_sel = selected == Some(*i);
-                let line =
-                    pr_line(pr, num_w, app.worktree_prs.contains(&pr.number), usize::from(text_w), p, is_sel);
+                let line = pr_line(
+                    pr,
+                    num_w,
+                    app.tab().worktree_prs.contains(&pr.number),
+                    usize::from(text_w),
+                    p,
+                    is_sel,
+                );
                 if is_sel {
                     buf.set_style(Rect::new(area.x, y, text_w, 1), sel_style(p));
                 }
@@ -237,7 +245,7 @@ fn draw_body(buf: &mut Buffer, body: Rect, app: &mut App, p: &Palette) {
     }
 
     if needs_bar {
-        draw_scrollbar(buf, area, rows.len(), viewport, app.scroll, p);
+        draw_scrollbar(buf, area, rows.len(), viewport, app.tab().scroll, p);
     }
 }
 
@@ -326,12 +334,14 @@ pub fn pr_line(
 fn draw_detail(frame: &mut Frame, app: &mut App, p: &Palette) {
     let area = frame.area();
     let (x, w) = (area.x, area.width);
-    let (Some(idx), View::Detail { number, scroll }) = (app.detail_pr(), app.view) else { return };
-    let Some(pr) = app.listing.as_ref().map(|l| l.prs[idx].clone()) else { return };
+    let (Some(idx), View::Detail { number, scroll }) = (app.tab().detail_pr(), app.tab().view) else {
+        return;
+    };
+    let Some(pr) = app.tab().listing.as_ref().map(|l| l.prs[idx].clone()) else { return };
     let base = Style::default().fg(p.text).bg(p.panel_bg);
     let dim = Style::default().fg(p.overlay0).bg(p.panel_bg);
-    let loading = app.details_loading.contains(&number);
-    let details = app.details.get(&number);
+    let loading = app.tab().details_loading.contains(&number);
+    let details = app.tab().details.get(&number);
 
     // Row 0: `#123 title`, fetch status, badge.
     let title_style = base.add_modifier(Modifier::BOLD);
@@ -356,7 +366,7 @@ fn draw_detail(frame: &mut Frame, app: &mut App, p: &Palette) {
 
     // Body, pre-wrapped so scrolling counts real rows.
     let body = Rect::new(x, area.y + 3, w, area.height.saturating_sub(5));
-    let banner = app.banner.clone();
+    let banner = app.tab().banner.clone();
     let body = draw_banner(frame.buffer_mut(), body, banner.as_ref(), p);
     if body.height > 0 {
         let viewport = usize::from(body.height);
@@ -367,7 +377,7 @@ fn draw_detail(frame: &mut Frame, app: &mut App, p: &Palette) {
         }
         let text_w = if needs_bar { body.width - 1 } else { body.width };
         let scroll = scroll.min(lines.len().saturating_sub(viewport));
-        app.view = View::Detail { number, scroll };
+        app.tab_mut().view = View::Detail { number, scroll };
         let buf = frame.buffer_mut();
         for (row, line) in lines.iter().skip(scroll).take(viewport).enumerate() {
             buf.set_line(body.x, body.y + row as u16, line, text_w);
