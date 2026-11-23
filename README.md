@@ -7,16 +7,16 @@ Open any pull request in its own worktree, straight from a [Herdr](https://herdr
 [![Herdr ≥ 0.9.0](https://img.shields.io/badge/herdr-%E2%89%A5%200.9.0-8a5cf6.svg)](https://herdr.dev)
 ![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
-Press a key in any pane inside a git repo: a popup lists the repo's open pull
-requests (GitHub) or merge requests (GitLab), styled like Herdr's own keybinds
-help. Press Enter on one and it is checked out in its own git worktree and
+Press a key in any pane: a popup lists the open pull requests (GitHub) or
+merge requests (GitLab) of every repo you have open in Herdr, one tab per
+repo, styled like Herdr's own keybinds help. Press Enter on one and it is checked out in its own git worktree and
 opened as a Herdr workspace. If that PR already has a worktree, you are
 switched to it instead; nothing is created twice.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│open PRs · acme/app                                           esc close │
-│ / press / to filter by number, title, branch or author                 │
+│1 app │ 2 api │ 3 docs                                        esc close │
+│ / press / to filter by number, title, branch or author        acme/app │
 │                                                                        │
 │ mine                                                                   │
 │ #412 ● Add OAuth login  you · feat/oauth [CI ✓]                        │
@@ -27,15 +27,17 @@ switched to it instead; nothing is created twice.
 │ others                                                                 │
 │ #398   Bump deps  renovate · renovate/all [CI ✗]                       │
 │                                                                        │
-│ search / · move j/k/↑↓ · open enter · refresh r · close esc            │
+│ search / · move j/k/↑↓ · open enter · switch repo tab · close esc      │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-`●` = a local worktree already exists for that PR.
+`●` = a local worktree already exists for that PR. With a single repo open
+the tab bar is replaced by `open PRs · owner/repo`.
 
 ## Features
 
 - **GitHub and GitLab**, including GitHub Enterprise and self-hosted GitLab.
+- **Repo tabs**: one tab per repo open in Herdr, loaded on first visit.
 - **Grouped list**: your PRs, PRs awaiting your review, then everything else.
 - **At a glance**: CI status, draft marker, author and branch; live filter with `/`.
 - **Preview**: description, labels, reviewers, per-check CI and the latest
@@ -113,7 +115,9 @@ Paste it into `~/.config/herdr/config.toml` and run `herdr server reload-config`
 | `/` | filter live by number (`12`, `#12`), title, branch or author |
 | `p` / `→` / `l` | preview the PR |
 | `enter` | open the PR's worktree workspace |
-| `r` | refresh (bypasses the cache) |
+| `tab` / `shift-tab` | next / previous repo tab (wraps) |
+| `1`–`9` | jump to a repo tab (not while filtering) |
+| `r` | refresh the current tab (bypasses the cache) |
 | `esc` | clear the filter first, then close |
 
 In the preview:
@@ -158,7 +162,22 @@ The plugin never runs a destructive git command, and never modifies or
 removes an existing worktree. If the fetch or the checkout fails, the git
 error is shown in the modal and nothing else happens.
 
-The target repo is the working directory of the pane the key was pressed in.
+## Repo tabs
+
+The tabs come from your open Herdr workspaces (`herdr workspace list`): one tab
+per repo, in workspace order, with linked worktrees folded into their repo's
+tab. Workspaces outside a git repo are skipped. The repo of the pane the key
+was pressed in is selected when the popup opens (and added first if no
+workspace has it); from a pane outside any repo, the first tab is.
+
+Each tab is loaded the first time you visit it (cache first, like a single
+repo) and keeps its own filter, selection, scroll and preview while you switch.
+`r` refreshes only the current tab. A repo that cannot be listed (no remote,
+unknown forge, CLI not logged in) shows its error in its own tab; the others
+keep working. Enter on a PR in any tab opens that repo's worktree workspace.
+
+If only one repo is open, or `herdr workspace list` fails, the popup shows
+just the repo of the pane the key was pressed in, without a tab bar.
 
 ## Config
 
