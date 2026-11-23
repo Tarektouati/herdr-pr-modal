@@ -18,6 +18,8 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 pub const HINT: &str = " / press / to filter by number, title, branch or author";
 pub const FOOTER: &str = " search / · move j/k/↑↓ · preview p/→ · open enter · refresh r · close esc";
+pub const FOOTER_TABS: &str =
+    " search / · move j/k/↑↓ · preview p/→ · open enter · refresh r · switch repo tab · close esc";
 pub const FOOTER_DETAIL: &str = " scroll j/k/↑↓ · prev/next [ ] · open enter · refresh r · back esc";
 pub const FOOTER_FILTER: &str = " type to filter · move ↑↓ · open enter · clear esc";
 pub const FOOTER_FATAL: &str = " close esc";
@@ -70,25 +72,48 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
         app.tab_mut().view = View::List;
     }
     let (x, w) = (area.x, area.width);
+    let multi = app.tabs.len() > 1;
 
-    // Row 0: title · status, badge on the right.
+    // Row 0: title · status (or the repo tabs), badge on the right.
     let title_style = base.add_modifier(Modifier::BOLD);
     let dim = Style::default().fg(p.overlay0).bg(p.panel_bg);
-    let mut title = vec![Span::styled("open PRs", title_style)];
-    if let Some(repo) = &app.tab().repo_label {
-        title.push(Span::styled(format!(" · {repo}"), title_style));
-    }
-    if app.tab().loading && app.tab().listing.is_some() {
-        title.push(Span::styled(" · refreshing…", dim));
-    } else if let Some(age) = app.tab().cached_age {
-        title.push(Span::styled(format!(" · cached {age}s"), dim));
-    }
+    let status = if app.tab().loading && app.tab().listing.is_some() {
+        Some(" · refreshing…".to_string())
+    } else {
+        app.tab().cached_age.map(|age| format!(" · cached {age}s"))
+    };
     let title_w = w.saturating_sub(BADGE_WIDTH + 1);
-    frame.buffer_mut().set_line(x, area.y, &Line::from(title), title_w);
+    if multi {
+        let labels: Vec<&str> = app.tabs.iter().map(|t| t.label.as_str()).collect();
+        let (line, scroll) =
+            tab_bar(&labels, app.active, usize::from(title_w), app.tab_scroll, title_style, dim);
+        app.tab_scroll = scroll;
+        frame.buffer_mut().set_line(x, area.y, &line, title_w);
+    } else {
+        let mut title = vec![Span::styled("open PRs", title_style)];
+        if let Some(repo) = &app.tab().repo_label {
+            title.push(Span::styled(format!(" · {repo}"), title_style));
+        }
+        if let Some(status) = &status {
+            title.push(Span::styled(status.clone(), dim));
+        }
+        frame.buffer_mut().set_line(x, area.y, &Line::from(title), title_w);
+    }
     draw_badge(frame.buffer_mut(), area, if app.tab().filtering { " esc back " } else { " esc close " }, p);
 
-    // Row 1: filter hint / live query / progress.
+    // Row 1: filter hint / live query / progress; with tabs, the active
+    // repo's `owner/repo` and status on the right.
     let hy = area.y + 1;
+    let mut left_w = w;
+    if multi && app.busy.is_none() {
+        let repo = app.tab().repo_label.clone().unwrap_or_else(|| app.tab().label.clone());
+        let right = format!("{repo}{} ", status.unwrap_or_default());
+        let rw = right.width() as u16;
+        if rw + 12 < w {
+            put(frame.buffer_mut(), x + w - rw, hy, rw, &right, dim);
+            left_w = w - rw - 1;
+        }
+    }
     if let Some(busy) = &app.busy {
         put(
             frame.buffer_mut(),
@@ -100,13 +125,13 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
         );
     } else if app.tab().filtering {
         let q = format!(" / {}", app.tab().query);
-        put(frame.buffer_mut(), x, hy, w, &q, base);
-        let cx = (x + q.width() as u16).min(area.right() - 1);
+        put(frame.buffer_mut(), x, hy, left_w, &q, base);
+        let cx = (x + q.width() as u16).min(x + left_w.max(1) - 1);
         frame.set_cursor_position(Position::new(cx, hy));
     } else if !app.tab().query.is_empty() {
-        put(frame.buffer_mut(), x, hy, w, &format!(" / {}", app.tab().query), dim);
+        put(frame.buffer_mut(), x, hy, left_w, &format!(" / {}", app.tab().query), dim);
     } else {
-        put(frame.buffer_mut(), x, hy, w, HINT, dim);
+        put(frame.buffer_mut(), x, hy, left_w, &truncate(HINT, usize::from(left_w)), dim);
     }
 
     // Body.
@@ -118,10 +143,91 @@ pub fn draw(frame: &mut Frame, app: &mut App, p: &Palette) {
         FOOTER_FATAL
     } else if app.tab().filtering {
         FOOTER_FILTER
+    } else if multi {
+        FOOTER_TABS
     } else {
         FOOTER
     };
     put(frame.buffer_mut(), x, area.bottom() - 1, w, footer, dim);
+}
+
+const TAB_SEP: &str = " │ ";
+const TAB_LEFT: &str = "‹ ";
+const TAB_RIGHT: &str = " ›";
+
+/// Index hint shown before a tab's label: `1 `–`9 `, none past nine.
+fn tab_hint(i: usize) -> String {
+    if i < 9 { format!("{} ", i + 1) } else { String::new() }
+}
+
+/// Last tab (exclusive) that fits in `width` when the bar starts at
+/// `start`, reserving room for the `‹`/`›` markers. Always at least one.
+fn tab_fit(widths: &[usize], start: usize, width: usize) -> usize {
+    let mut used = if start > 0 { TAB_LEFT.width() } else { 0 };
+    let mut end = start;
+    while end < widths.len() {
+        let add = widths[end] + if end > start { TAB_SEP.width() } else { 0 };
+        let more = if end + 1 < widths.len() { TAB_RIGHT.width() } else { 0 };
+        if used + add + more > width {
+            break;
+        }
+        used += add;
+        end += 1;
+    }
+    end.max(start + 1).min(widths.len())
+}
+
+/// First visible tab, given item `widths`: the previous `scroll`, moved
+/// just enough to keep `active` visible, and pulled back left when the bar
+/// has room again (e.g. after the popup grew).
+pub fn tab_window(widths: &[usize], active: usize, width: usize, scroll: usize) -> (usize, usize) {
+    if widths.is_empty() {
+        return (0, 0);
+    }
+    let active = active.min(widths.len() - 1);
+    let mut start = scroll.min(active);
+    while tab_fit(widths, start, width) <= active {
+        start += 1;
+    }
+    while start > 0 && tab_fit(widths, start - 1, width) == widths.len() {
+        start -= 1;
+    }
+    (start, tab_fit(widths, start, width))
+}
+
+/// The tab bar line and the new tab scroll: active tab in `active_style`,
+/// the rest and the `1`–`9` hints dimmed, `│` between, `‹ ›` when clipped.
+pub fn tab_bar(
+    labels: &[&str],
+    active: usize,
+    width: usize,
+    scroll: usize,
+    active_style: Style,
+    dim: Style,
+) -> (Line<'static>, usize) {
+    let widths: Vec<usize> =
+        labels.iter().enumerate().map(|(i, l)| tab_hint(i).width() + l.width()).collect();
+    let (start, end) = tab_window(&widths, active, width, scroll);
+    let mut spans = Vec::new();
+    if start > 0 {
+        spans.push(Span::styled(TAB_LEFT, dim));
+    }
+    let markers =
+        if start > 0 { TAB_LEFT.width() } else { 0 } + if end < labels.len() { TAB_RIGHT.width() } else { 0 };
+    for (i, label) in labels.iter().enumerate().take(end).skip(start) {
+        if i > start {
+            spans.push(Span::styled(TAB_SEP, dim));
+        }
+        let hint = tab_hint(i);
+        // Only a lone tab wider than the bar gets cut.
+        let room = width.saturating_sub(markers + hint.width());
+        spans.push(Span::styled(hint, dim));
+        spans.push(Span::styled(truncate(label, room), if i == active { active_style } else { dim }));
+    }
+    if end < labels.len() {
+        spans.push(Span::styled(TAB_RIGHT, dim));
+    }
+    (Line::from(spans), start)
 }
 
 fn draw_badge(buf: &mut Buffer, area: Rect, badge: &str, p: &Palette) {
@@ -920,6 +1026,83 @@ mod tests {
         let narrow = line_text(&pr_line(&pr, 3, false, 30, &p, false));
         assert!(narrow.width() <= 30, "{narrow}");
         assert!(narrow.contains("chore"), "{narrow}");
+    }
+
+    fn bar(labels: &[&str], active: usize, width: usize, scroll: usize) -> (String, usize) {
+        let (line, scroll) = tab_bar(labels, active, width, scroll, Style::default(), Style::default());
+        let text = line_text(&line);
+        assert!(text.width() <= width, "{text:?} wider than {width}");
+        (text, scroll)
+    }
+
+    const REPOS: [&str; 4] = ["api", "web-app", "docs", "infra"];
+
+    #[test]
+    fn tab_bar_fits_without_markers() {
+        assert_eq!(bar(&REPOS, 2, 80, 0), ("1 api │ 2 web-app │ 3 docs │ 4 infra".into(), 0));
+    }
+
+    #[test]
+    fn tab_bar_scrolls_to_keep_the_active_tab_visible() {
+        // Every item is 5-9 wide; 20 columns hold two with a marker.
+        let (text, scroll) = bar(&REPOS, 0, 20, 0);
+        assert_eq!(text, "1 api │ 2 web-app ›");
+        assert_eq!(scroll, 0);
+        let (text, scroll) = bar(&REPOS, 3, 20, scroll);
+        assert_eq!(text, "‹ 3 docs │ 4 infra");
+        assert_eq!(scroll, 2);
+        // Moving back left inside the window doesn't scroll…
+        assert_eq!(bar(&REPOS, 2, 20, scroll).1, 2);
+        // …past its left edge does, by just enough.
+        let (text, scroll) = bar(&REPOS, 1, 20, scroll);
+        assert_eq!((text.as_str(), scroll), ("‹ 2 web-app ›", 1));
+        // Once the popup is wide enough again, the bar starts at the first tab.
+        assert_eq!(bar(&REPOS, 3, 80, 3).1, 0);
+    }
+
+    #[test]
+    fn tab_bar_cuts_a_lone_tab_wider_than_the_bar() {
+        let (text, _) = bar(&["a-very-long-repository-name", "b"], 0, 16, 0);
+        assert_eq!(text, "1 a-very-long… ›");
+        assert_eq!(bar(&["x"; 12], 11, 40, 0).0.split(" │ ").last(), Some("x"), "no hint past 9");
+    }
+
+    fn render(app: &mut App, width: u16) -> Vec<String> {
+        let mut term = ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, 10)).unwrap();
+        term.draw(|f| draw(f, app, &Palette::catppuccin())).unwrap();
+        let buf = term.backend().buffer().clone();
+        (0..buf.area.height)
+            .map(|y| (0..buf.area.width).map(|x| buf[(x, y)].symbol().to_string()).collect())
+            .collect()
+    }
+
+    fn loaded_tab(label: &str, repo: &str) -> crate::app::Tab {
+        let mut t = crate::app::Tab::new(label, std::path::PathBuf::from("/r"));
+        t.repo_label = Some(repo.into());
+        t.set_listing(crate::model::Listing { viewer: "me".into(), prs: Vec::new() }, Some(5));
+        t
+    }
+
+    #[test]
+    fn one_repo_keeps_the_old_title_and_footer() {
+        let mut app = App::new();
+        app.set_tabs(vec![loaded_tab("web", "acme/web")], 0);
+        let rows = render(&mut app, 100);
+        assert!(rows[0].starts_with("open PRs · acme/web · cached 5s"), "{}", rows[0]);
+        assert_eq!(rows[1].trim_end(), HINT);
+        assert_eq!(rows[9].trim_end(), FOOTER);
+    }
+
+    #[test]
+    fn several_repos_show_tabs_and_the_active_repo_on_the_hint_row() {
+        let mut app = App::new();
+        app.set_tabs(vec![loaded_tab("api", "acme/api"), loaded_tab("web", "acme/web")], 1);
+        let rows = render(&mut app, 100);
+        assert!(rows[0].starts_with("1 api │ 2 web "), "{}", rows[0]);
+        assert!(rows[0].contains("esc close"), "{}", rows[0]);
+        assert!(rows[1].starts_with(HINT), "{}", rows[1]);
+        assert!(rows[1].ends_with("acme/web · cached 5s "), "{}", rows[1]);
+        assert!(rows[9].contains("switch repo tab"), "{}", rows[9]);
     }
 
     #[test]
