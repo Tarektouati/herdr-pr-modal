@@ -14,21 +14,21 @@ opened as a Herdr workspace. If that PR already has a worktree, you are
 switched to it instead; nothing is created twice.
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│1 app │ 2 api │ 3 docs                                        esc close │
-│ / press / to filter by number, title, branch or author        acme/app │
-│                                                                        │
-│ mine                                                                   │
-│ #412 ● Add OAuth login  you · feat/oauth [CI ✓]                        │
-│                                                                        │
-│ review requested                                                       │
-│ #409   Fix race in queue  sam · fix/queue-race [draft] [CI …]          │
-│                                                                        │
-│ others                                                                 │
-│ #398   Bump deps  renovate · renovate/all [CI ✗]                       │
-│                                                                        │
-│ search / · move j/k/↑↓ · open enter · switch repo tab · close esc      │
-└────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│1 app │ 2 api │ 3 docs                                          esc close │
+│ / press / to filter by number, title, branch or author          acme/app │
+│                                                                          │
+│ mine                                                                     │
+│ #412 ● Add OAuth login  you · feat/oauth [CI ✓]                          │
+│                                                                          │
+│ review requested                                                         │
+│ #409   Fix race in queue  sam · fix/queue-race [draft] [CI …]            │
+│                                                                          │
+│ others                                                                   │
+│ #398   Bump deps  renovate · renovate/all [CI ✗]                         │
+│                                                                          │
+│ search / · move j/k/↑↓ · preview p/→ · open enter · repo tab · close esc │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 `●` = a local worktree already exists for that PR. With a single repo open
@@ -176,8 +176,8 @@ repo) and keeps its own filter, selection, scroll and preview while you switch.
 unknown forge, CLI not logged in) shows its error in its own tab; the others
 keep working. Enter on a PR in any tab opens that repo's worktree workspace.
 
-If only one repo is open, or `herdr workspace list` fails, the popup shows
-just the repo of the pane the key was pressed in, without a tab bar.
+If there is only one repo to show (Herdr has one repo open and the pane is in
+it or in no repo, or `herdr workspace list` fails), there is no tab bar.
 
 ## Config
 
