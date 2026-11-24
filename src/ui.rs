@@ -18,8 +18,7 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 pub const HINT: &str = " / press / to filter by number, title, branch or author";
 pub const FOOTER: &str = " search / · move j/k/↑↓ · preview p/→ · open enter · refresh r · close esc";
-pub const FOOTER_TABS: &str =
-    " search / · move j/k/↑↓ · preview p/→ · open enter · refresh r · switch repo tab · close esc";
+pub const FOOTER_TABS: &str = " search / · move j/k/↑↓ · preview p/→ · open enter · repo tab · close esc";
 pub const FOOTER_DETAIL: &str = " scroll j/k/↑↓ · prev/next [ ] · open enter · refresh r · back esc";
 pub const FOOTER_FILTER: &str = " type to filter · move ↑↓ · open enter · clear esc";
 pub const FOOTER_FATAL: &str = " close esc";
@@ -1102,7 +1101,12 @@ mod tests {
         assert!(rows[0].contains("esc close"), "{}", rows[0]);
         assert!(rows[1].starts_with(HINT), "{}", rows[1]);
         assert!(rows[1].ends_with("acme/web · cached 5s "), "{}", rows[1]);
-        assert!(rows[9].contains("switch repo tab"), "{}", rows[9]);
+        assert_eq!(rows[9].trim_end(), FOOTER_TABS);
+    }
+
+    #[test]
+    fn tabbed_footer_is_no_wider_than_the_plain_one() {
+        assert!(FOOTER_TABS.width() <= FOOTER.width(), "{} > {}", FOOTER_TABS.width(), FOOTER.width());
     }
 
     #[test]
