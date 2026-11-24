@@ -156,7 +156,7 @@ pub fn run_modal() -> std::io::Result<()> {
                     Action::Refresh => {
                         if idx < infos.len() {
                             let tab = app.tab_mut();
-                            tab.loading = true;
+                            tab.begin_refresh();
                             spawn_load(&tx, &env, idx, tab.root.clone(), info, true);
                         }
                     }
@@ -188,38 +188,15 @@ pub fn run_modal() -> std::io::Result<()> {
                         app.tab_mut().loading = false;
                         app.fatal = Some(e);
                     }
-                    Msg::Resolved(idx, Ok(info)) => {
-                        if let Some(tab) = app.tabs.get_mut(idx) {
-                            tab.repo_label = Some(info.repo.path.clone());
-                        }
-                        if let Some(slot) = infos.get_mut(idx) {
+                    Msg::Resolved(idx, result) => {
+                        let label = result.as_ref().map(|info| info.repo.path.clone()).map_err(Clone::clone);
+                        if let (Some(slot), Ok(info)) = (infos.get_mut(idx), result) {
                             *slot = Some(info);
                         }
+                        app.on_resolved(idx, label);
                     }
-                    Msg::Resolved(idx, Err(e)) => {
-                        if app.tabs.len() == 1 {
-                            // Single repo: same as before tabs, nothing else to show.
-                            app.tab_mut().loading = false;
-                            app.fatal = Some(e);
-                        } else if let Some(tab) = app.tabs.get_mut(idx) {
-                            tab.loading = false;
-                            tab.load_error = Some(e);
-                        }
-                    }
-                    Msg::Listing(idx, result) => {
-                        let Some(tab) = app.tabs.get_mut(idx) else { continue };
-                        tab.loading = false;
-                        match result {
-                            Ok((listing, age)) => tab.set_listing(listing, age),
-                            Err(e) if tab.listing.is_some() => tab.banner = Some(e),
-                            Err(e) => tab.load_error = Some(e),
-                        }
-                    }
-                    Msg::Marks(idx, marks) => {
-                        if let Some(tab) = app.tabs.get_mut(idx) {
-                            tab.worktree_prs = marks;
-                        }
-                    }
+                    Msg::Listing(idx, result) => app.on_listing(idx, result),
+                    Msg::Marks(idx, marks) => app.on_marks(idx, marks),
                     // Herdr already focused the PR workspace; closing the
                     // popup reveals it.
                     Msg::Opened(Ok(_)) => return Ok(()),
@@ -227,11 +204,7 @@ pub fn run_modal() -> std::io::Result<()> {
                         app.busy = None;
                         app.tab_mut().banner = Some(ErrRow::new(e, None));
                     }
-                    Msg::Details(idx, number, details) => {
-                        if let Some(tab) = app.tabs.get_mut(idx) {
-                            tab.set_detail(number, *details);
-                        }
-                    }
+                    Msg::Details(idx, number, details) => app.on_detail(idx, number, *details),
                 }
             }
         }

@@ -180,11 +180,63 @@ impl App {
         self.active = i;
         Action::SwitchTab(i)
     }
+
+    // Worker results, routed by tab index so a slow load lands in the tab
+    // that asked for it even after the user switched away. An unknown index
+    // is ignored.
+
+    /// Tab `idx`'s remote resolved to `owner/repo`, or failed. With a single
+    /// tab there is nothing else to show, so a failure is fatal as before
+    /// tabs; otherwise it stays in that tab.
+    pub fn on_resolved(&mut self, idx: usize, result: Result<String, ErrRow>) {
+        let single = self.tabs.len() == 1;
+        let Some(tab) = self.tabs.get_mut(idx) else { return };
+        match result {
+            Ok(label) => tab.repo_label = Some(label),
+            Err(e) => {
+                tab.loading = false;
+                if single {
+                    self.fatal = Some(e);
+                } else {
+                    tab.load_error = Some(e);
+                }
+            }
+        }
+    }
+
+    pub fn on_listing(&mut self, idx: usize, result: Result<(Listing, Option<u64>), ErrRow>) {
+        let Some(tab) = self.tabs.get_mut(idx) else { return };
+        tab.loading = false;
+        match result {
+            Ok((listing, age)) => tab.set_listing(listing, age),
+            Err(e) if tab.listing.is_some() => tab.banner = Some(e),
+            Err(e) => tab.load_error = Some(e),
+        }
+    }
+
+    pub fn on_marks(&mut self, idx: usize, marks: HashSet<u64>) {
+        if let Some(tab) = self.tabs.get_mut(idx) {
+            tab.worktree_prs = marks;
+        }
+    }
+
+    pub fn on_detail(&mut self, idx: usize, number: u64, details: PrDetails) {
+        if let Some(tab) = self.tabs.get_mut(idx) {
+            tab.set_detail(number, details);
+        }
+    }
 }
 
 impl Tab {
     pub fn new(label: impl Into<String>, root: PathBuf) -> Self {
         Self { label: label.into(), root, ..Self::default() }
+    }
+
+    /// A refresh (or a retry after a failed resolve) started: drop the old
+    /// error so the loading row shows meanwhile.
+    pub fn begin_refresh(&mut self) {
+        self.loading = true;
+        self.load_error = None;
     }
 
     pub fn rows(&self) -> Vec<Row> {
@@ -714,12 +766,87 @@ mod tests {
         assert_eq!(a.active, 0);
     }
 
+    fn other_listing() -> Listing {
+        Listing { viewer: "me".into(), prs: vec![pr(7, "z", "other")] }
+    }
+
+    fn fresh_tabs(n: usize) -> App {
+        let mut a = App::new();
+        a.set_tabs((0..n).map(|i| Tab::new(format!("r{i}"), PathBuf::from("/r"))).collect(), 0);
+        for t in &mut a.tabs {
+            t.loading = true;
+        }
+        a
+    }
+
     #[test]
-    fn results_for_a_background_tab_stay_there() {
+    fn a_listing_for_a_tab_switched_away_from_lands_there() {
+        let mut a = fresh_tabs(2);
+        a.handle_key(key(KeyCode::Tab), 10);
+        a.on_listing(0, Ok((other_listing(), Some(3))));
+        assert_eq!(a.tabs[0].listing, Some(other_listing()));
+        assert_eq!(a.tabs[0].cached_age, Some(3));
+        assert!(!a.tabs[0].loading);
+        let active = a.tab();
+        assert!(active.loading && active.listing.is_none(), "the active tab is untouched");
+    }
+
+    #[test]
+    fn a_failed_load_in_a_background_tab_stays_there() {
+        let mut a = tabs(3);
+        a.tabs[2] = Tab::new("r2", PathBuf::from("/r"));
+        a.on_listing(1, Err(ErrRow::new("rate limited", None)));
+        a.on_listing(2, Err(ErrRow::new("not logged in", None)));
+        assert_eq!(a.tabs[1].banner.as_ref().map(|e| e.message.as_str()), Some("rate limited"));
+        assert!(a.tabs[1].load_error.is_none(), "has data: banner, not error row");
+        assert_eq!(a.tabs[2].load_error.as_ref().map(|e| e.message.as_str()), Some("not logged in"));
+        assert!(a.tab().banner.is_none() && a.tab().load_error.is_none());
+    }
+
+    #[test]
+    fn marks_and_details_land_in_their_tab() {
         let mut a = tabs(2);
-        a.handle_key(key(KeyCode::Char('j')), 10);
-        a.tabs[1].set_listing(Listing { viewer: "me".into(), prs: vec![pr(7, "z", "other")] }, None);
-        assert_eq!(a.tab().selected, 1);
-        assert_eq!(a.tab().listing.as_ref().unwrap().prs.len(), 3);
+        a.on_marks(1, HashSet::from([3]));
+        a.tabs[1].details_loading.insert(3);
+        a.on_detail(1, 3, details());
+        assert_eq!(a.tabs[1].worktree_prs, HashSet::from([3]));
+        assert!(a.tabs[1].details.contains_key(&3) && a.tabs[1].details_loading.is_empty());
+        assert!(a.tab().worktree_prs.is_empty() && a.tab().details.is_empty());
+    }
+
+    #[test]
+    fn a_resolve_failure_is_fatal_only_with_one_tab() {
+        let mut one = fresh_tabs(1);
+        one.on_resolved(0, Err(ErrRow::new("no 'origin' remote", None)));
+        assert_eq!(one.fatal.as_ref().map(|e| e.message.as_str()), Some("no 'origin' remote"));
+        assert!(!one.tab().loading);
+
+        let mut two = fresh_tabs(2);
+        two.on_resolved(1, Ok("acme/web".into()));
+        two.on_resolved(0, Err(ErrRow::new("no 'origin' remote", None)));
+        assert!(two.fatal.is_none());
+        assert_eq!(two.tabs[0].load_error.as_ref().map(|e| e.message.as_str()), Some("no 'origin' remote"));
+        assert!(!two.tabs[0].loading);
+        assert_eq!(two.tabs[1].repo_label.as_deref(), Some("acme/web"));
+        assert!(two.tabs[1].load_error.is_none() && two.tabs[1].loading);
+    }
+
+    #[test]
+    fn results_for_an_unknown_tab_are_ignored() {
+        let mut a = tabs(2);
+        a.on_resolved(5, Err(ErrRow::new("x", None)));
+        a.on_listing(5, Ok((other_listing(), None)));
+        a.on_marks(5, HashSet::from([1]));
+        a.on_detail(5, 1, details());
+        assert!(a.fatal.is_none());
+        assert!(a.tabs.iter().all(|t| t.load_error.is_none() && t.worktree_prs.is_empty()));
+    }
+
+    #[test]
+    fn begin_refresh_clears_the_old_error() {
+        let mut t = Tab::new("r", PathBuf::from("/r"));
+        t.load_error = Some(ErrRow::new("no 'origin' remote", None));
+        t.begin_refresh();
+        assert!(t.loading && t.load_error.is_none());
     }
 }
